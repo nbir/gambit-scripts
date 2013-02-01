@@ -18,10 +18,17 @@ This repository is a collection of various research scripts used during the cour
 
 ## List of scripts/tools
 
-1.
-2.
-3.
+1. TODO
+
+2. TODO
+
+3. `gangActivityAnalysis` - Identify user's home in Hollenbeck gang territories, displacement metrics, rivalry analysis. 
+	* Execute: `python run.py 7 8`
+	* `7` - Generates a count of gang-member's tweet pattern in home and rival territory, and the same for any usual user from LA.
+	* `8` - Converts the tweeting patterns into fractions, and generates a `csv`.
+	
 4. `identifySocialAreas` - Identify social areas (like stadiums, malls etc.) inside Hollenbeck area.
+	* Execute: `python run.py 1 2`
 
 
 

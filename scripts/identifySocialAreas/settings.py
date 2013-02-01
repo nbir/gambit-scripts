@@ -1,3 +1,10 @@
+# Gambit scripts
+#
+# Copyright (C) USC Information Sciences Institute
+# Author: Nibir Bora <nbora@usc.edu>
+# URL: <http://cbg.isi.edu/>
+# For license information, see LICENSE
+
 
 HBK_LOCATION_ID = 20
 HBK_BOUNDS = [[34.013, -118.230], [34.113, -118.155]]

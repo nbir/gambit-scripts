@@ -1,3 +1,11 @@
+# Gambit scripts
+#
+# Copyright (C) USC Information Sciences Institute
+# Author: Nibir Bora <nbora@usc.edu>
+# URL: <http://cbg.isi.edu/>
+# For license information, see LICENSE
+
+
 import sys
 import os
 sys.path.insert(0, os.path.abspath('..'))
