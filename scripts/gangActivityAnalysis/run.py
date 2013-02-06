@@ -8,11 +8,20 @@
 
 import sys
 import bin.do
+import settings as my
 
-if '7' in sys.argv:
-	print '----- CALCULATE TWEET FREQ. IN RIVAL AND HOME TERRITORY -----\n'
-	bin.do.calc_tweet_freq_in_rival_home()
+if '-get' in sys.argv:
+	print '----- GETTING TWEETS INSIDE BOUNDS -----\n'
+	bin.do.get_tweets_in()
 
-if '8' in sys.argv:
+if '-trim' in sys.argv:
+	print '----- TRIMMING HOME CLUSTERS IN DATA -----\n'
+	bin.do.trim_home_clusters()
+
+if '-count' in sys.argv:
+	print '----- CALCULATING METRICS -----\n'
+	bin.do.calc_gang_vs_la_tweeting_pattern()
+
+if '-csv' in sys.argv:
 	print '----- GENERATE FRACTIONS GANG vs LA CSV -----\n'
 	bin.do.generate_frac_csv()

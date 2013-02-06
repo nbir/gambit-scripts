@@ -8,6 +8,7 @@
 
 HBK_LOCATION_ID = 20
 HBK_BOUNDS = [[34.013, -118.230], [34.113, -118.155]]
+HBK_POLYGON = [[34.013, -118.230], [34.113, -118.155]]
 HBK_BIG_BOUNDS = [[33.988, -118.255], [34.138, -118.105]]
 HBK_BIG_BOUNDS_string = '33.988,-118.255,34.138,-118.105'
 
@@ -37,7 +38,13 @@ LOCATION_DATA_FILE = 'location_data_all.json'
 OUTPUT_COUNT_FILE = 'gang_vs_la_count.json'
 OUTPUT_FRACTION_FILE = 'gang_vs_la_count.csv'
 
+HBK_TWEET_LOC_FILE = 'hbk_all_tweet_loc.csv'
+HBK_USER_HOME_LOC_FILE = 'user_home_locations_hbk.csv'
+HBK_HOMES_IN_GANG_TTY_FOLDER = 'user_homes_in_gang_t'
 
+
+
+#-----
 BOUND_RADIUS_MILES = 5
 CONST_MILE_TO_METER = 1609.34
 

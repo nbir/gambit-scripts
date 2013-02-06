@@ -16,7 +16,218 @@ import anyjson
 import lib.geo as geo
 import lib.PiP_Edge as pip
 
+def get_tweets_in(location_id=my.HBK_LOCATION_ID):
+	# get all tweets in hollenbeck area
+	import sys
+	sys.path.append("/home/gambit/collector/gambit2/")
+	from django.core.management import setup_environ
+	from gambit import settings
+	setup_environ(settings)
 
+	from scraper.models import Location, Tweet
+
+	print 'Querying database...'
+	tweets = Tweet.objects.all()
+	loc = Location.objects.get(id=location_id)
+	tweets = tweets.filter(geo__within=loc.polygon)
+	print 'Querying complete. Writing to file...'
+	
+	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_LOC_file, 'wb') as fp:
+		csv_writer = csv.writer(fp, delimiter=',')
+
+		for tweet in tweets:
+			csv_writer.writerow([tweet.user_id, tweet.geo[0], tweet.geo[1]])
+
+	print 'Done! Fetched ' + str(tweets.count()) + ' entries.'
+
+
+def trim_home_clusters():
+	hbk_user_home_loc = []
+	hbk_all_tweets = []
+	hbk_trimmed_tweets = []		# home clusters removed
+	hbk_poly = []
+
+	# Read location polygons for gang territories
+	print 'Reading location data...'
+	with open(my.DATA_FOLDER + '/' + my.LOCATION_DATA_FILE, 'rb') as fp1:
+		location_data = anyjson.deserialize(fp1.read())
+		for loc in location_data:
+			if loc['id'] == my.HBK_LOCATION_ID:
+				hbk_poly = loc['polygon']
+
+	# read all tweets
+	print 'Loading all tweets...'
+	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_LOC_FILE, 'rb') as fp1:
+		csv_reader = csv.reader(fp1, delimiter=',')
+		for row in csv_reader:
+			if len(row) > 0:
+				hbk_all_tweets.append([int(row[0]), float(row[1]), float(row[2])])
+	print str(len(hbk_all_tweets)) + ' total instances loaded.'
+
+	# read all home locations
+	print 'Loading all user homes...'
+	with open(my.DATA_FOLDER + '/' + my.HBK_USER_HOME_LOC_FILE, 'rb') as fp1:
+		csv_reader = csv.reader(fp1, delimiter=',')
+		for row in csv_reader:
+			if len(row) > 0 and pip.point_in_poly(float(row[1]), float(row[2]), hbk_poly):
+				hbk_user_home_loc.append([int(row[0]), float(row[1]), float(row[2])])
+	print str(len(hbk_user_home_loc)) + ' users with homes inside bounds.'
+
+	# tweet list with home clusters removed
+	print 'Removing home clusters...'
+	hbk_home_list = [[user_home[1], user_home[2]] for user_home in hbk_user_home_loc]
+	hbk_trimmed_tweets = removeNearPoints(hbk_all_tweets, hbk_home_list, 100)
+	print str(len(hbk_trimmed_tweets)) + ' instances after home clusters removed.'
+
+	print 'Replacing old set of tweets...'
+	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_LOC_FILE, 'wb') as fp1:
+		csv_writer = csv.writer(fp1, delimiter=',')
+		for tweet in hbk_trimmed_tweets:
+			csv_writer.writerow(tweet)
+	print str(len(hbk_trimmed_tweets)) + ' total instances written.'
+
+
+def calc_gang_vs_la_tweeting_pattern():
+	hbk_all_tweets = []
+	hbk_user_home_loc = []
+	hbk_home_list = []
+	hbk_users_in_gang_t = {}
+	
+	counts = {}
+
+	tty_counts = {}
+	tty_polys = {}
+	hbk_poly = []
+
+	# Read location polygons for gang territories
+	print 'Reading location data...'
+	with open(my.DATA_FOLDER + '/' + my.LOCATION_DATA_FILE, 'rb') as fp1:
+		location_data = anyjson.deserialize(fp1.read())
+		for loc in location_data:
+			if loc['id'] >= 23 and loc['id'] <= 54:
+				tty_polys[loc['id']] = loc['polygon']
+			elif loc['id'] == my.HBK_LOCATION_ID:
+				hbk_poly = loc['polygon']
+
+	# read all tweets
+	print 'Loading all tweets...'
+	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_LOC_FILE, 'rb') as fp1:
+		csv_reader = csv.reader(fp1, delimiter=',')
+		for row in csv_reader:
+			if len(row) > 0:
+				hbk_all_tweets.append([int(row[0]), float(row[1]), float(row[2])])
+	print str(len(hbk_all_tweets)) + ' total instances loaded.'
+
+	# read all home locations
+	print 'Loading all user homes...'
+	with open(my.DATA_FOLDER + '/' + my.HBK_USER_HOME_LOC_FILE, 'rb') as fp1:
+		csv_reader = csv.reader(fp1, delimiter=',')
+		for row in csv_reader:
+			if len(row) > 0 and pip.point_in_poly(float(row[1]), float(row[2]), hbk_poly):
+				hbk_user_home_loc.append([int(row[0]), float(row[1]), float(row[2])])
+	print str(len(hbk_user_home_loc)) + ' users with homes inside bounds.'
+
+	# read users with homes in each gang territory
+	print 'Loading user homes in each gang tty...'
+	for gang_id in my.HBK_GANG_AND_RIVAL_IDS:
+		hbk_users_in_gang_t[gang_id] = []
+		with open(my.DATA_FOLDER + '/' + my.HBK_HOMES_IN_GANG_TTY_FOLDER + '/' + str(gang_id) + '.csv', 'rb') as fp1:
+			csv_reader = csv.reader(fp1, delimiter=',')
+			for row in csv_reader:
+				if len(row) > 0:
+					hbk_users_in_gang_t[gang_id].append(int(row[0]))
+	
+
+	print 'Start counting...'
+	# Count tweets
+	for gang_id in my.HBK_GANG_AND_RIVAL_IDS:
+		counts[gang_id] = {
+			'gang' : {
+				'total' : 0,
+				'home' : 0,
+				'rival' : {}
+			},
+			'la' : {
+				'total' : 0,
+				'home' : 0,
+				'rival' : {}
+			}
+		}
+
+		# Count tweets for all gang members
+		this_gang_all_tweets = keepUserIds(hbk_all_tweets, hbk_users_in_gang_t[gang_id])
+		counts[gang_id]['gang']['total'] = len(this_gang_all_tweets)
+
+		this_gang_home_tweets = keepPolygon(this_gang_all_tweets, tty_polys[gang_id])
+		counts[gang_id]['gang']['home'] = len(this_gang_home_tweets)
+
+		for rival_id in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
+			this_gang_rival_tweets = keepPolygon(this_gang_all_tweets, tty_polys[rival_id])
+			counts[gang_id]['gang']['rival'][rival_id] = len(this_gang_rival_tweets)
+
+		# Count tweets for all LA users
+		counts[gang_id]['la']['total'] = len(hbk_all_tweets)
+
+		if not gang_id in tty_counts:
+			all_user_tweets_in_tty = keepPolygon(hbk_all_tweets, tty_polys[gang_id])
+			tty_counts[gang_id] = len(all_user_tweets_in_tty)
+		counts[gang_id]['la']['home'] = tty_counts[gang_id]
+
+		for rival_id in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
+			if not rival_id in tty_counts:
+				all_user_tweets_in_tty = keepPolygon(hbk_all_tweets, tty_polys[rival_id])
+				tty_counts[rival_id] = len(all_user_tweets_in_tty)
+			counts[gang_id]['la']['rival'][rival_id] = tty_counts[rival_id]
+
+	with open(my.DATA_FOLDER + '/' + my.OUTPUT_COUNT_FILE, 'wb') as fp2:
+		fp2.write(anyjson.serialize(counts))
+	print counts
+
+
+
+
+def removeUserIds(tweets, user_ids):
+	new_tweets = []
+	for tweet in tweets:
+		if not tweet[0] in user_ids:
+			new_tweets.append(tweet)
+	return new_tweets
+def keepUserIds(tweets, user_ids):
+	new_tweets = []
+	for tweet in tweets:
+		if tweet[0] in user_ids:
+			new_tweets.append(tweet)
+	return new_tweets
+
+def removeNearPoints(tweets, points, radius):
+	new_tweets = []
+	for tweet in tweets:
+		inside = False
+		for point in points:
+			if geo.distance(geo.xyz(tweet[1], tweet[2]), geo.xyz(point[0], point[1])) < radius:
+				inside = True
+				break
+		if not inside:
+			new_tweets.append(tweet)
+	return new_tweets
+
+def removePolygon(tweets, polygon):
+	new_tweets = []
+	for tweet in tweets:
+		if not pip.point_in_poly(tweet[1], tweet[2], polygon):
+			new_tweets.append(tweet)
+	return new_tweets
+def keepPolygon(tweets, polygon):
+	new_tweets = []
+	for tweet in tweets:
+		if pip.point_in_poly(tweet[1], tweet[2], polygon):
+			new_tweets.append(tweet)
+	return new_tweets
+	
+
+
+
+# OBSOLETE
 def calc_tweet_freq_in_rival_home():
 # 
 # 
@@ -117,7 +328,7 @@ def calc_tweet_freq_in_rival_home():
 	with open(my.DATA_FOLDER + '/' + my.OUTPUT_COUNT_FILE, 'wb') as fp2:
 		fp2.write(anyjson.serialize(counts))
 	print counts
-
+# OBSOLETE -*-
 
 def calc_center(loc_arr):
 	center = [0.0,0.0]
@@ -184,9 +395,9 @@ def generate_frac_csv():
 			}
 		}
 
-		fractions[gang_id]['gang']['home'] = round(float(counts[gang_id]['gang']['home']) / float(counts[gang_id]['gang']['total']), 4)
+		fractions[gang_id]['gang']['home'] = round(float(counts[gang_id]['gang']['home']) / float(counts[gang_id]['gang']['total']), 4) if counts[gang_id]['gang']['total'] != 0 else 0
 		for rival_id in counts[gang_id]['gang']['rival']:
-			fractions[gang_id]['gang']['rival'][rival_id] = round(float(counts[gang_id]['gang']['rival'][rival_id]) / float(counts[gang_id]['gang']['total']), 4)
+			fractions[gang_id]['gang']['rival'][rival_id] = round(float(counts[gang_id]['gang']['rival'][rival_id]) / float(counts[gang_id]['gang']['total']), 4) if counts[gang_id]['gang']['total'] != 0 else 0
 
 		fractions[gang_id]['la']['home'] = round(float(counts[gang_id]['la']['home']) / float(counts[gang_id]['la']['total']), 4)
 		for rival_id in counts[gang_id]['la']['rival']:
@@ -194,8 +405,17 @@ def generate_frac_csv():
 
 	with open(my.DATA_FOLDER + '/' + my.OUTPUT_FRACTION_FILE, 'wb') as fp2:
 		csv_writer = csv.writer(fp2, delimiter=',')
+		csv_writer.writerow(['gang/rival_id', 'frac_gang', 'frac_LA', 'count_gang,count_LA', 'count_gang', 'count_LA'])
 		for gang_id in fractions:
-			csv_writer.writerow([gang_id, fractions[gang_id]['gang']['home'], fractions[gang_id]['la']['home']])
+			csv_writer.writerow([gang_id, fractions[gang_id]['gang']['home'], \
+				fractions[gang_id]['la']['home'], \
+				str(counts[gang_id]['gang']['home']) + '/' + str(counts[gang_id]['gang']['total']) + '; ' + str(counts[gang_id]['la']['home']), \
+				counts[gang_id]['gang']['home'], \
+				counts[gang_id]['la']['home']])
 			for rival_id in fractions[gang_id]['gang']['rival']:
-				csv_writer.writerow([rival_id, fractions[gang_id]['gang']['rival'][rival_id], fractions[gang_id]['la']['rival'][rival_id]])
-			csv_writer.writerow(['-', '-', '-'])
+				csv_writer.writerow([rival_id, fractions[gang_id]['gang']['rival'][rival_id], \
+					fractions[gang_id]['la']['rival'][rival_id], \
+					str(counts[gang_id]['gang']['rival'][rival_id]) + '/' + str(counts[gang_id]['gang']['total']) + '; ' + str(counts[gang_id]['la']['rival'][rival_id]), \
+					counts[gang_id]['gang']['rival'][rival_id], \
+					counts[gang_id]['la']['rival'][rival_id]])
+			csv_writer.writerow(['-', '-', '-' ,'-', '-'])
