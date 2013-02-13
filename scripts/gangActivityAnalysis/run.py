@@ -7,21 +7,28 @@
 
 
 import sys
-import bin.do
+#import bin.gangVsLA as do
+import bin.rivalNonrival as do
 import settings as my
 
 if '-get' in sys.argv:
 	print '----- GETTING TWEETS INSIDE BOUNDS -----\n'
-	bin.do.get_tweets_in()
+	do.get_tweets_in()
 
 if '-trim' in sys.argv:
 	print '----- TRIMMING HOME CLUSTERS IN DATA -----\n'
-	bin.do.trim_home_clusters()
+	do.trim_home_clusters()
 
-if '-count' in sys.argv:
+if '-calc' in sys.argv:
 	print '----- CALCULATING METRICS -----\n'
-	bin.do.calc_gang_vs_la_tweeting_pattern()
+	do.calc_matrics()
 
-if '-csv' in sys.argv:
-	print '----- GENERATE FRACTIONS GANG vs LA CSV -----\n'
-	bin.do.generate_frac_csv()
+if '-out' in sys.argv:
+	print '----- GENERATE OUTPUT FILES -----\n'
+	do.generate_output()
+
+
+
+if '-test' in sys.argv:
+	print '----- TEST, TEST, TEST! -----\n'
+	do.test()
