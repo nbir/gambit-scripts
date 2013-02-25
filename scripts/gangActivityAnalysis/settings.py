@@ -48,6 +48,7 @@ OUT_MEASURE2_FILE = 'rival_nonrival_norm.json'
 HBK_TWEET_LOC_FILE = 'hbk_all_tweet_loc.csv'
 HBK_USER_HOME_LOC_FILE = 'user_home_locations_hbk.csv'
 HBK_HOMES_IN_GANG_TTY_FOLDER = 'user_homes_in_gang_t'
+HBK_TWEET_DIST_FILE = 'hbk_tweet_dist.csv'
 
 
 

@@ -21,55 +21,23 @@ def test():
 	tty_polys, hbk_poly = loadLocPoly()
 	hbk_all_tweets = loadAllTweets()
 	hbk_user_home_loc = loadAllHomeLoc(hbk_poly)
-	hbk_users_in_gang_t = loadUsersInGangTty(tty_polys, hbk_user_home_loc)
-	dist_norm = calcDistNorm()
-	#cprint dist_norm
-	visit_mat = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm, hbk_user_home_loc)
-	print visit_mat
-
-def calc_metrics_dist_norm():
-	tty_polys, hbk_poly = loadLocPoly()
-	hbk_all_tweets = loadAllTweets()
-	hbk_user_home_loc = loadAllHomeLoc(hbk_poly)
-	hbk_users_in_gang_t = loadUsersInGangTty(tty_polys, hbk_user_home_loc)
-	dist_norm = calcDistNorm()
-	visit_mat = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm, hbk_user_home_loc)
-	#print visit_mat
-	norm = calcNorm(calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t))
-
-	measure1 = {}
-	measure2 = {}
+	user_homes = {}
+	for item in hbk_user_home_loc:
+		user_homes[item[0]] = [item[1], item[2]]
+	user_ids = [item[0] for item in hbk_user_home_loc]
 	
-	for gang_id in my.HBK_GANG_AND_RIVAL_IDS:
-		measure1[gang_id] = {
-			'rival' : [],
-			'nonrival' : []
-			}
-		measure2[gang_id] = {
-			'rival' : [],
-			'nonrival' : []
-			}
+	tweet_dist = []
+	for tweet in hbk_all_tweets:
+		if tweet[0] in user_ids:
+			tweet_dist.append([tweet[0], int(round(geo.distance(geo.xyz(tweet[1], tweet[2]), geo.xyz(user_homes[tweet[0]][0], user_homes[tweet[0]][1])))) ])
+	print str(len(tweet_dist)) + ' distance computed from home to tweet.'
 
-		non_home_sum = sum(visit_mat[gang_id].values()) - visit_mat[gang_id][gang_id]
-
-		for rival_id in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
-			if gang_id != rival_id and visit_mat[gang_id][rival_id] != 0:
-				frac = visit_mat[gang_id][rival_id]/float(non_home_sum)
-				measure1[gang_id]['rival'].append(round(frac, 5))
-				measure2[gang_id]['rival'].append(round(frac/norm[rival_id], 5))
-
-		for non_rival_id in my.HBK_GANG_ID_LIST:
-			if gang_id != non_rival_id and non_rival_id not in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
-				if visit_mat[gang_id][non_rival_id] != 0 and norm[non_rival_id] != 0:
-					frac = visit_mat[gang_id][non_rival_id]/float(non_home_sum)
-					measure1[gang_id]['nonrival'].append(round(frac, 5))
-					measure2[gang_id]['nonrival'].append(round(frac/norm[non_rival_id], 5))
+	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_DIST_FILE, 'wb') as fp:
+		csv_writer = csv.writer(fp, delimiter=',')
+		for item in tweet_dist:
+			csv_writer.writerow(item)
 
 
-	with open(my.DATA_FOLDER + '/' + my.OUT_MEASURE1_FILE, 'wb') as fp2:
-		fp2.write(anyjson.serialize(measure1))
-	with open(my.DATA_FOLDER + '/' + my.OUT_MEASURE2_FILE, 'wb') as fp2:
-		fp2.write(anyjson.serialize(measure2))
 
 def get_tweets_in(location_id=my.HBK_LOCATION_ID):
 # get all tweets in hollenbeck area
@@ -138,9 +106,6 @@ def calc_matrics():
 
 	measure1 = {}
 	measure2 = {}
-	#-CH
-	measure3 = {}
-	
 	for gang_id in my.HBK_GANG_AND_RIVAL_IDS:
 		measure1[gang_id] = {
 			'rival' : [],
@@ -150,39 +115,22 @@ def calc_matrics():
 			'rival' : [],
 			'nonrival' : []
 			}
-		#-CH
-		measure3[gang_id] = {
-			'rival' : [],
-			'nonrival' : []
-			}
-
-		non_home_sum = sum(visit_mat[gang_id].values()) - visit_mat[gang_id][gang_id]
 
 		for rival_id in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
 			if gang_id != rival_id and visit_mat[gang_id][rival_id] != 0:
-				frac = visit_mat[gang_id][rival_id]/float(non_home_sum)
-				measure1[gang_id]['rival'].append(round(frac, 5))
-				measure2[gang_id]['rival'].append(round(frac/norm[rival_id], 5))
-				#-CH
-				measure3[gang_id]['rival'].append([frac, norm[rival_id]])
+				measure1[gang_id]['rival'].append(visit_mat[gang_id][rival_id])
+				measure2[gang_id]['rival'].append(round(visit_mat[gang_id][rival_id]/norm[rival_id], 2))
 
 		for non_rival_id in my.HBK_GANG_ID_LIST:
 			if gang_id != non_rival_id and non_rival_id not in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
 				if visit_mat[gang_id][non_rival_id] != 0 and norm[non_rival_id] != 0:
-					frac = visit_mat[gang_id][non_rival_id]/float(non_home_sum)
-					measure1[gang_id]['nonrival'].append(round(frac, 5))
-					measure2[gang_id]['nonrival'].append(round(frac/norm[non_rival_id], 5))
-					#-CH
-					measure3[gang_id]['nonrival'].append([frac, norm[non_rival_id]])
-
+					measure1[gang_id]['nonrival'].append(visit_mat[gang_id][non_rival_id])
+					measure2[gang_id]['nonrival'].append(round(visit_mat[gang_id][non_rival_id]/norm[non_rival_id], 2))
 
 	with open(my.DATA_FOLDER + '/' + my.OUT_MEASURE1_FILE, 'wb') as fp2:
 		fp2.write(anyjson.serialize(measure1))
 	with open(my.DATA_FOLDER + '/' + my.OUT_MEASURE2_FILE, 'wb') as fp2:
 		fp2.write(anyjson.serialize(measure2))
-	#-CH
-	with open(my.DATA_FOLDER + '/' + 'measure3.json', 'wb') as fp2:
-		fp2.write(anyjson.serialize(measure3))
 		
 
 def generate_output():
@@ -211,7 +159,7 @@ def generate_output():
 	for gang_id in measure1:
 		if not (len(measure1[gang_id]['rival']) == 0 and len(measure1[gang_id]['nonrival']) == 0):
 			visitation_sum += tty_names[int(gang_id)] + ',' + str(sum(measure1[gang_id]['rival'])) + ', ' + str(sum(measure1[gang_id]['nonrival'])) + '\n'
-			visitation_avg += tty_names[int(gang_id)] + ',' + str(0 if len(measure1[gang_id]['rival']) == 0 else round(sum(measure1[gang_id]['rival'])/float(len(measure1[gang_id]['rival'])), 5)) + ', ' + str(0 if len(measure1[gang_id]['nonrival']) == 0 else round(sum(measure1[gang_id]['nonrival'])/float(len(measure1[gang_id]['nonrival'])), 5) ) + '\n'
+			visitation_avg += tty_names[int(gang_id)] + ',' + str(0 if len(measure1[gang_id]['rival']) == 0 else round(sum(measure1[gang_id]['rival'])/float(len(measure1[gang_id]['rival'])), 2)) + ', ' + str(0 if len(measure1[gang_id]['nonrival']) == 0 else round(sum(measure1[gang_id]['nonrival'])/float(len(measure1[gang_id]['nonrival'])), 2) ) + '\n'
 
 			each_gang += "name = '" + tty_names[int(gang_id)] + "'\n"
 			each_gang += 'rival = ' + arr_to_str(measure1[gang_id]['rival']) + '\n'
@@ -233,7 +181,7 @@ def generate_output():
 	for gang_id in measure2:
 		if not (len(measure2[gang_id]['rival']) == 0 and len(measure2[gang_id]['nonrival']) == 0):
 			visitation_sum_norm += tty_names[int(gang_id)] + ',' + str(sum(measure2[gang_id]['rival'])) + ', ' + str(sum(measure2[gang_id]['nonrival'])) + '\n'
-			visitation_avg_norm += tty_names[int(gang_id)] + ',' + str(0 if len(measure2[gang_id]['rival']) == 0 else round(sum(measure2[gang_id]['rival'])/float(len(measure2[gang_id]['rival'])), 5)) + ', ' + str(0 if len(measure2[gang_id]['nonrival']) == 0 else round(sum(measure2[gang_id]['nonrival'])/float(len(measure2[gang_id]['nonrival'])), 5) ) + '\n'
+			visitation_avg_norm += tty_names[int(gang_id)] + ',' + str(0 if len(measure2[gang_id]['rival']) == 0 else round(sum(measure2[gang_id]['rival'])/float(len(measure2[gang_id]['rival'])), 2)) + ', ' + str(0 if len(measure2[gang_id]['nonrival']) == 0 else round(sum(measure2[gang_id]['nonrival'])/float(len(measure2[gang_id]['nonrival'])), 2) ) + '\n'
 
 			each_gang_norm += "name = '" + tty_names[int(gang_id)] + "'\n"
 			each_gang_norm += 'rival = ' + arr_to_str(measure2[gang_id]['rival']) + '\n'
@@ -252,26 +200,6 @@ def generate_output():
 	with open(my.DATA_FOLDER + '/out/' + 'visit_series_norm' + '.txt', 'wb') as fp:
 		fp.write(visit_series_norm)
 
-	#-CH
-	'''measure3 = {}
-	with open(my.DATA_FOLDER + '/' + 'measure3.json', 'rb') as fp1:
-		measure3 = anyjson.deserialize(fp1.read())
-	m3_visitation_sum = ''
-	m3_visitation_avg = ''
-	for gang_id in measure3:
-		if not (len(measure3[gang_id]['rival']) == 0 and len(measure3[gang_id]['nonrival']) == 0):
-			m3_visitation_sum += tty_names[int(gang_id)] + ',' \
-				+ str(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['rival']])) + ', ' \
-				+ str(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['nonrival']])) + '\n'
-			m3_visitation_avg += tty_names[int(gang_id)] + ',' \
-				+ str(0 if len(measure3[gang_id]['rival']) == 0 else round(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['rival']])/float(len(measure3[gang_id]['rival'])), 5)) + ', ' \
-				+ str(0 if len(measure3[gang_id]['nonrival']) == 0 else round(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['nonrival']])/float(len(measure3[gang_id]['nonrival'])), 5) ) + '\n'
-	
-	with open(my.DATA_FOLDER + '/out/' + 'm3_visitation_sum' + '.csv', 'wb') as fp:
-		fp.write(m3_visitation_sum)
-	with open(my.DATA_FOLDER + '/out/' + 'm3_visitation_avg' + '.csv', 'wb') as fp:
-		fp.write(m3_visitation_avg)'''
-
 
 def arr_to_str(arr):
 	arr_str = ''
@@ -281,15 +209,9 @@ def arr_to_str(arr):
 
 
 # CALC functions
-def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=None, hbk_user_home_loc=None):
+def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t):
 # visit_mat[i][j] = #tw(i) in j
 	print 'Calculating visitation matrix...'
-	hbk_home_list = {}
-	if dist_norm:
-		print '...for distance norm.'
-		for user_home in hbk_user_home_loc:
-			hbk_home_list[user_home[0]] = [user_home[1], user_home[2]]
-
 	visit_mat = {}
 	for gang_id in my.HBK_GANG_ID_LIST:
 		visit_mat[gang_id] = {}
@@ -303,20 +225,10 @@ def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=
 			this_gang_tweets = keepUserIds(hbk_all_tweets, hbk_users_in_gang_t[gang_id])
 			for to_id in my.HBK_GANG_ID_LIST:
 				this_tty_tweets = keepPolygon(this_gang_tweets, tty_polys[to_id])
-				if dist_norm == None:
-					visit_mat[gang_id][to_id] = len(this_tty_tweets)
-					#visit_mat[to_id][gang_id] = len(this_tty_tweets)
-				else:
-					visit_val = 0
-					for tweet in this_tty_tweets:
-						dist = geo.distance(geo.xyz(tweet[1], tweet[2]), geo.xyz(hbk_home_list[tweet[0]][0], hbk_home_list[tweet[0]][1]))
-						dist_i = int(round(dist/100 + 1))
-						visit_val += 1/dist_norm[dist_i]
-						#print str(dist_i) + '\t=>\t' + str(1/dist_norm[dist_i])
-					visit_mat[gang_id][to_id] = round(visit_val, 5)
+				visit_mat[gang_id][to_id] = len(this_tty_tweets)
+				#visit_mat[to_id][gang_id] = len(this_tty_tweets)
 	print 'Done calculating visitation matrix...'
 	return visit_mat
-	# visit_mat[from][to] = count
 
 def calcNorm(visit_mat):
 	print 'Calculating norm vector...'
@@ -330,23 +242,6 @@ def calcNorm(visit_mat):
 	total = sum([norm[id] for id in norm])
 	for gang_id in my.HBK_GANG_ID_LIST:
 		norm[gang_id] = float(norm[gang_id]) / float(total)
-	return norm
-
-def calcDistNorm():
-	print 'Calculating distance norm vector...'
-	norm = {}
-	for i in range(1, 101):
-		norm[i] = 0
-	count = 1
-	with open(my.DATA_FOLDER + '/' + my.HBK_TWEET_DIST_FILE, 'rb') as fp:
-		csv_reader = csv.reader(fp, delimiter=',')
-		for row in csv_reader:
-			dist_i = int(int(row[1])/100)+1
-			if dist_i > 0 and dist_i <= 100:
-				norm[dist_i] += 1
-				count += 1
-	for i in range(1, 101):
-		norm[i] = (1/float(count) if norm[i] == 0 else norm[i]/float(count))
 	return norm
 #- CALC functions
 

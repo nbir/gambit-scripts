@@ -28,6 +28,10 @@ if '-out' in sys.argv:
 	do.generate_output()
 
 
+if '-calc-distnorm' in sys.argv:
+	print '----- CALCULATING METRICS FOR DISTANCE NORM -----\n'
+	do.calc_metrics_dist_norm()
+
 
 if '-test' in sys.argv:
 	print '----- TEST, TEST, TEST! -----\n'
