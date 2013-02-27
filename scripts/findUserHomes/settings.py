@@ -6,6 +6,9 @@
 # For license information, see LICENSE
 
 
+# NOTE: SCROLL TO END OF FILE
+
+
 # Hollenbeck strict bounds
 hbk_homes = {
 	# Files & folder names
@@ -48,7 +51,7 @@ hbk_homes = {
 	}
 }
 
-# Hollenbeck extended bounds
+# Hollenbeck extended bounds (NOT IN USE)
 #	'bbox'				:	'33.988,-118.255,34.138,-118.105',
 #	
 hbk_large_homes = {
@@ -83,4 +86,5 @@ hbk_large_homes = {
 	}
 }
 
+# SET CURENT SETTING dict HERE
 CURRENT_SETTINGS = hbk_homes

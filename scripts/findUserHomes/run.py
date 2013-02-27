@@ -12,6 +12,7 @@ import argparse
 
 from settings import CURRENT_SETTINGS as my
 
+# Log screen output
 class Logger(object):
   def __init__(self, filename="Default.log"):
       self.terminal = sys.stdout
