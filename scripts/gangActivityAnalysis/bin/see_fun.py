@@ -18,6 +18,7 @@ import lib.PiP_Edge as pip
 
 import bin.load_fun as load
 import bin.prep_fun as prep
+import bin.calc_fun as calc
 
 
 
@@ -34,19 +35,19 @@ def see_gang_tweet_counts():
 	for gang_id in hbk_users_in_gang_t:
 		hbk_tweets_by_gang[gang_id] = len(prep.keepUserIds(hbk_all_tweets, hbk_users_in_gang_t[gang_id]))
 	print 'Each gang\'s tweet count: %s' % hbk_tweets_by_gang
-	return hbk_tweets_by_gang
+	for gang_id in hbk_tweets_by_gang:
+		if hbk_tweets_by_gang[gang_id] != 0:
+			print '%s => %s' % (gang_id, hbk_tweets_by_gang[gang_id])
+
+	print 'Total number of users: %s' % sum([len(hbk_users_in_gang_t[gang_id]) for gang_id in hbk_tweets_by_gang if hbk_tweets_by_gang[gang_id] != 0])
+	print 'Total tweets from all users: %s' % sum([hbk_tweets_by_gang[gang_id] for gang_id in hbk_tweets_by_gang])
 
 
 
 ##############################################################
 
 def test():
-	tty_polys, hbk_poly = loadLocPoly()
-	#hbk_all_tweets = loadAllTweets()
-	hbk_user_home_loc = loadAllHomeLoc(hbk_poly)
-	hbk_users_in_gang_t = loadUsersInGangTty(tty_polys, hbk_user_home_loc)
-	print hbk_users_in_gang_t
-	#dist_norm = calcDistNorm()
-	#print dist_norm
-	#visit_mat = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm, hbk_user_home_loc)
-	#print visit_mat
+	dist_norm = calc.calcDistNormCDF()
+	for k in dist_norm:
+		print '%s, %s' % (k, dist_norm[k])
+	

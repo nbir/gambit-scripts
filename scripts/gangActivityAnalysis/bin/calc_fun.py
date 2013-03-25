@@ -91,7 +91,10 @@ def calc_rival_nonrival_matrics_dist_norm():
 	hbk_all_tweets = load.loadAllTweets()
 	hbk_user_home_loc = load.loadAllHomeLoc(hbk_poly)
 	hbk_users_in_gang_t = load.loadUsersInGangTty(tty_polys, hbk_user_home_loc)
-	dist_norm = calcDistNorm()
+	# Different distance norm functions
+	#dist_norm = calcDistNorm()
+	dist_norm = calcDistNormCDF()
+
 	visit_mat = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm, hbk_user_home_loc)
 	#print visit_mat
 	norm = calcNorm(calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t))
@@ -193,9 +196,10 @@ def calcNorm(visit_mat):
 		norm[gang_id] = float(norm[gang_id]) / float(total)
 	return norm
 
+## Alternate distance norm measures
 def calcDistNorm():
 	calcTweetDistances()
-	print 'Calculating distance norm vector...'
+	print 'Calculating distance norm vector (fraction)...'
 	norm = {}
 	for i in range(1, 101):
 		norm[i] = 0
@@ -210,6 +214,34 @@ def calcDistNorm():
 	for i in range(1, 101):
 		norm[i] = (1/float(count) if norm[i] == 0 else norm[i]/float(count))
 	return norm
+
+def calcDistNormCDF():
+	calcTweetDistances()
+	print 'Calculating distance norm vector (CDF)...'
+	frac = {}
+	for i in range(1, 101):
+		frac[i] = 0
+	count = 1
+	with open('data/' + my.DATA_FOLDER + my.HBK_TWEET_DIST_FILE, 'rb') as fp:
+		csv_reader = csv.reader(fp, delimiter=',')
+		for row in csv_reader:
+			dist_i = int(int(row[1])/100)+1
+			if dist_i > 0 and dist_i <= 100:
+				frac[dist_i] += 1
+				count += 1
+	
+	cdf = {}
+	for i in range(1, 101):
+		cdf[i] = sum([frac[j] for j in range(1, i+1)])/float(count)
+	#cdf[100] = 1.0
+	
+	norm = {}
+	for i in range(1, 101):
+		#norm[i] = 1/cdf[i]		# dist_norm_2
+		norm[i] = 1-cdf[i]		# dist_norm_3
+	
+	return norm
+
 
 def calcTweetDistances():
 	print 'Calculating tweeting distances...'

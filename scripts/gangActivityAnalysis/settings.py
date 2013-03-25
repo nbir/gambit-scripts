@@ -51,7 +51,11 @@ HBK_GANG_AND_RIVAL_IDS = {
 }
 
 # Folders
-DATA_FOLDER = 'rivalNonrival/'
+#DATA_FOLDER = 'rivalNonrival/'
+#DATA_FOLDER = 'rivalNonrival_distNorm/'
+#DATA_FOLDER = 'rivalNonrival_borderRemoved/'
+DATA_FOLDER = 'rivalNonrival_roadsRemoved/'
+
 
 #Files
 HBK_TWEET_LOC_FILE = 'hbk_all_tweet_loc.csv'
@@ -71,6 +75,9 @@ HBK_TWEET_DIST_FILE = 'hbk_tweet_dist.csv'
 
 # Trim parameters
 HOME_RADIUS = 50 		# meters
+MIN_NON_HOME_TWEETS = 25
+MIN_GANG_USERS = 2
+BORDER_LINE_SPAN = 50 	# meters
 
 
 
