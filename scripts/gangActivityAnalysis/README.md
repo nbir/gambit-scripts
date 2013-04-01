@@ -2,7 +2,8 @@
 
 
 Research scripts for [Gambit](http://brain.isi.edu/~gambit/v2.0/)
-| [CBG](http://cbg.isi.edu) ISI, University of Southern California, Los Angeles, CA
+| [Computational Behavior Group](http://cbg.isi.edu)
+| USC Information Sciences Institute, 4676 Admiralty Way, Marina del Rey, CA 90292
 
 ## Contributors
 
@@ -29,6 +30,13 @@ Prepare data:
 * `-prep trim-pols` - Trim tweets inside polygons
 
 Generate results and output files:
+
+* `-calc metrics` - Calculate all metrics
+* `-out metrics` - Generate output metric files
+* `-out charts` - Generate output metric charts
+
+
+*Obsolete*:
 
 * `-calc rnr|rivalnonrival` - Calculate rival-nonrival visit metrics
 * `-calc rnr-dist|rivalnonrival-dist` - Calculate rival-nonrival visit metrics using distance norm

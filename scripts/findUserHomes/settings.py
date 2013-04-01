@@ -13,12 +13,15 @@
 hbk_homes = {
 	# Files & folder names
 	'sub_folder'	:	'hbk_homes/',
+	#'sub_folder'	:	'journeyToCrime/',
+	#'sub_folder'	:	'LA/',
 	'files'				: {
 		'users_min_tweet'			:	'users_min_tweet.csv',
 		'user_home_loc'				:	'user_home_loc.csv',
 		'user_home_loc_json'	:	'user_home_loc.json',
 		'user_home_loc_trimmed'				:	'hbk_user_home_loc.csv',
 		'user_home_loc_trimmed_json'	:	'hbk_user_home_loc.json',
+		'daily_disp' 	:	'hbk_tweet_dist.csv',
 	},
 	'folders'			:	{
 		'user_night_data'	:	'user_night_data/',

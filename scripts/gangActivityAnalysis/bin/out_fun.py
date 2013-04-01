@@ -16,36 +16,44 @@ import anyjson
 import lib.geo as geo
 import lib.PiP_Edge as pip
 
+import numpy as np
+import matplotlib.pyplot as plt
+
 import bin.load_fun as load
 import bin.prep_fun as prep
 import bin.calc_fun as calc
 
 
 
-def generate_output(metrics_folder='metrics/'):
+# OUTPUT metric files
+def generate_outputs_files():
+# Generate output metric files for all measures
+	generate_output('no_norm')
+	generate_output('non_home_norm')
+	generate_output('tw_freq_norm')
+	generate_output('dist_norm')
+	generate_output('rivals_norm')
+
+	generate_output('dist__non_home')
+	generate_output('dist__tw_freq')
+	generate_output('dist__rivals')
+
+	generate_output('dist__tw_freq__non_home')
+	generate_output('dist__tw_freq__non_home__rivals')
+
+def generate_output(folder_name):
 	measure1 = {}
-	measure2 = {}
 	tty_names = load.loadLocNames()
 
 	visitation_sum = ''
-	visitation_sum_norm = ''
 	visitation_avg = ''
-	visitation_avg_norm = ''
-
 	each_gang = ''
-	each_gang_norm = ''
-
 	series_rival = []
 	series_nonrival = []
-	series_rival_norm = []
-	series_nonrival_norm = []
 
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'measure1.json', 'rb') as fp1:
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'visit_sets.json', 'rb') as fp1:
 		measure1 = anyjson.deserialize(fp1.read())
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'measure2.json', 'rb') as fp1:
-		measure2 = anyjson.deserialize(fp1.read())
 
-	# Measure 1
 	for gang_id in measure1:
 		if not (len(measure1[gang_id]['rival']) == 0 and len(measure1[gang_id]['nonrival']) == 0):
 			visitation_sum += tty_names[int(gang_id)] + ',' + str(sum(measure1[gang_id]['rival'])) + ', ' + str(sum(measure1[gang_id]['nonrival'])) + '\n'
@@ -59,64 +67,14 @@ def generate_output(metrics_folder='metrics/'):
 			series_nonrival += measure1[gang_id]['nonrival']
 	visit_series = 'rival = ' + arr_to_str(series_rival) + '\n' + 'nonrival = ' + arr_to_str(series_nonrival)
 	
-	if not os.path.exists('data/' + my.DATA_FOLDER + metrics_folder + 'out/'):
-		os.makedirs('data/' + my.DATA_FOLDER + metrics_folder + 'out/')
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visitation_sum' + '.csv', 'wb') as fp:
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'visitation_sum' + '.csv', 'wb') as fp:
 		fp.write(visitation_sum)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visitation_avg' + '.csv', 'wb') as fp:
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'visitation_avg' + '.csv', 'wb') as fp:
 		fp.write(visitation_avg)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'each_gang' + '.txt', 'wb') as fp:
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'each_gang' + '.txt', 'wb') as fp:
 		fp.write(each_gang)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visit_series' + '.txt', 'wb') as fp:
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'visit_series' + '.txt', 'wb') as fp:
 		fp.write(visit_series)
-
-	# Measure 2
-	for gang_id in measure2:
-		if not (len(measure2[gang_id]['rival']) == 0 and len(measure2[gang_id]['nonrival']) == 0):
-			visitation_sum_norm += tty_names[int(gang_id)] + ',' + str(sum(measure2[gang_id]['rival'])) + ', ' + str(sum(measure2[gang_id]['nonrival'])) + '\n'
-			visitation_avg_norm += tty_names[int(gang_id)] + ',' + str(0 if len(measure2[gang_id]['rival']) == 0 else round(sum(measure2[gang_id]['rival'])/float(len(measure2[gang_id]['rival'])), 5)) + ', ' + str(0 if len(measure2[gang_id]['nonrival']) == 0 else round(sum(measure2[gang_id]['nonrival'])/float(len(measure2[gang_id]['nonrival'])), 5) ) + '\n'
-
-			each_gang_norm += "name = '" + tty_names[int(gang_id)] + "'\n"
-			each_gang_norm += 'rival = ' + arr_to_str(measure2[gang_id]['rival']) + '\n'
-			each_gang_norm += 'nonrival = ' + arr_to_str(measure2[gang_id]['nonrival']) + '\n\n'
-
-			series_rival_norm += measure2[gang_id]['rival']
-			series_nonrival_norm += measure2[gang_id]['nonrival']
-	visit_series_norm = 'rival = ' + arr_to_str(series_rival_norm) + '\n' + 'nonrival = ' + arr_to_str(series_nonrival_norm)
-
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visitation_sum_norm' + '.csv', 'wb') as fp:
-		fp.write(visitation_sum_norm)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visitation_avg_norm' + '.csv', 'wb') as fp:
-		fp.write(visitation_avg_norm)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'each_gang_norm' + '.txt', 'wb') as fp:
-		fp.write(each_gang_norm)
-	with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'visit_series_norm' + '.txt', 'wb') as fp:
-		fp.write(visit_series_norm)
-
-	#-CH
-	# Measure 3
-	try:
-		measure3 = {}
-		with open('data/' + my.DATA_FOLDER + metrics_folder + 'measure3.json', 'rb') as fp1:
-			measure3 = anyjson.deserialize(fp1.read())
-		m3_visitation_sum = ''
-		m3_visitation_avg = ''
-		for gang_id in measure3:
-			if not (len(measure3[gang_id]['rival']) == 0 and len(measure3[gang_id]['nonrival']) == 0):
-				m3_visitation_sum += tty_names[int(gang_id)] + ',' \
-					+ str(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['rival']])) + ', ' \
-					+ str(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['nonrival']])) + '\n'
-				m3_visitation_avg += tty_names[int(gang_id)] + ',' \
-					+ str(0 if len(measure3[gang_id]['rival']) == 0 else round(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['rival']])/float(len(measure3[gang_id]['rival'])), 5)) + ', ' \
-					+ str(0 if len(measure3[gang_id]['nonrival']) == 0 else round(sum([(x[0]*(x[0]/x[1])) for x in measure3[gang_id]['nonrival']])/float(len(measure3[gang_id]['nonrival'])), 5) ) + '\n'
-		
-		with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'm3_visitation_sum' + '.csv', 'wb') as fp:
-			fp.write(m3_visitation_sum)
-		with open('data/' + my.DATA_FOLDER + metrics_folder + 'out/' + 'm3_visitation_avg' + '.csv', 'wb') as fp:
-			fp.write(m3_visitation_avg)
-	except Exception:
-		print 'Error in generating output for measure3.'
-
 
 def arr_to_str(arr):
 	arr_str = ''
@@ -124,6 +82,77 @@ def arr_to_str(arr):
 		arr_str += str(val) + ','
 	return '[' + arr_str[:-1] + ']'
 
+
+# OUTPUT charts
+def generate_outputs_charts():
+# Generate output metric files for all measures
+	generate_charts('no_norm')
+	generate_charts('non_home_norm')
+	generate_charts('tw_freq_norm')
+	generate_charts('dist_norm')
+	generate_charts('rivals_norm')
+
+	generate_charts('dist__non_home')
+	generate_charts('dist__tw_freq')
+	generate_charts('dist__rivals')
+
+	generate_charts('dist__tw_freq__non_home')
+	generate_charts('dist__tw_freq__non_home__rivals')
+
+def generate_charts(folder_name):
+	measure1 = {}
+	tty_names = load.loadLocNames()
+
+	names = []
+	sum_rival = []
+	sum_nonrival = []
+	avg_rival = []
+	avg_nonrival = []
+
+	with open('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/' + 'visit_sets.json', 'rb') as fp1:
+		measure1 = anyjson.deserialize(fp1.read())
+
+	for gang_id in measure1:
+		if not (len(measure1[gang_id]['rival']) == 0 and len(measure1[gang_id]['nonrival']) == 0):
+			names.append(str(tty_names[int(gang_id)].replace('_', ' ')))
+			sum_rival.append(round(sum(measure1[gang_id]['rival']), 5))
+			sum_nonrival.append(round(sum(measure1[gang_id]['nonrival']),5))
+			avg_rival.append(0 if len(measure1[gang_id]['rival']) == 0 else round(sum(measure1[gang_id]['rival'])/float(len(measure1[gang_id]['rival'])), 5))
+			avg_nonrival.append(0 if len(measure1[gang_id]['nonrival']) == 0 else round(sum(measure1[gang_id]['nonrival'])/float(len(measure1[gang_id]['nonrival'])), 5))
+	
+	'''print names
+	print sum_rival
+	print sum_nonrival
+	print avg_rival
+	print avg_nonrival'''
+	
+	plot_visits_chart(names, sum_rival, sum_nonrival, folder_name, 'visits_sum.png')
+	plot_visits_chart(names, avg_rival, avg_nonrival, folder_name, 'visits_avg.png')
+
+def plot_visits_chart(names, rival, nonrival, folder_name, file_name):
+	ind = np.arange(len(names))  # the x locations for the groups
+	#width = 0.30       # the width of the bars
+	width = 0.25       # the width of the bars
+	#fig = plt.figure(figsize=(14,5))
+	fig = plt.figure(figsize=(8,5))
+	ax = fig.add_subplot(111)
+	ax.set_autoscaley_on(False)
+	ax.set_ylim([0,1])
+	plt.subplots_adjust(left=0.045, right=0.99, top=0.98, bottom=0.28)
+	rects1 = ax.bar(ind, rival, width, color='#E41A1C', alpha=0.65, edgecolor='#E41A1C')
+	rects2 = ax.bar(ind+width, nonrival, width, color='#377EB8', alpha=0.8, edgecolor='#377EB8')
+	ax.set_ylabel('Fraction of visits')
+	ax.set_xticks(ind+width)
+	#ax.set_xticklabels(names)
+	xtickNames = plt.setp(ax, xticklabels=names)
+	#plt.setp(xtickNames, rotation=45)
+	plt.setp(xtickNames, rotation=90)
+	ax.legend((rects1[0], rects2[0]), ('rival', 'nonrival'), fontsize=11, \
+		title=folder_name.replace('_', ' ')+'\n'+file_name.replace('.png','').replace('visits_', ''))
+
+	if not os.path.exists('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/charts/'):
+		os.makedirs('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/charts/')
+	plt.savefig('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/charts/' + file_name)
 
 
 

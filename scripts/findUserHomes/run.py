@@ -33,7 +33,9 @@ if __name__ == '__main__':
 		all - Get all latlng for users who\'s homes were found')
 	parser.add_argument('-f', '--find', nargs='*', help='\
 		home - Finding homes for users (scikit-learn.cluster.DBSCAN)\n\
-		trim - Trim list of user home latlng inside polygon')
+		trim - Trim list of user home latlng inside polygon\n\
+		disp - Find daily max displacement for users\n\
+		charts - Plot charts for daily max displacement')
 	args = parser.parse_args()
 	#print args
 
@@ -60,3 +62,11 @@ if __name__ == '__main__':
 		if 'trim' in args.find:
 			print '\n*** Trim list of user home latlng inside polygon ***\n'
 			do.trim_user_homes(my['loc_pol'])
+		if 'disp' in args.find:
+			print '\n*** Find daily max displacement for users ***\n'
+			do.find_daily_disp()
+		if 'charts' in args.find:
+			print '\n*** Plot charts for daily max displacement ***\n'
+			do.generate_disp_plots()
+
+

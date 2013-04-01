@@ -54,7 +54,9 @@ HBK_GANG_AND_RIVAL_IDS = {
 #DATA_FOLDER = 'rivalNonrival/'
 #DATA_FOLDER = 'rivalNonrival_distNorm/'
 #DATA_FOLDER = 'rivalNonrival_borderRemoved/'
-DATA_FOLDER = 'rivalNonrival_roadsRemoved/'
+#DATA_FOLDER = 'rivalNonrival_roadsRemoved/'
+DATA_FOLDER = 'rivalNonrival_activityPoints/'
+#DATA_FOLDER = 'rivalNonrival_crime/'
 
 
 #Files

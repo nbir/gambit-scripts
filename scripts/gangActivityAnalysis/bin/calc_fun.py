@@ -20,6 +20,94 @@ import bin.load_fun as load
 import bin.prep_fun as prep
 
 
+def calc_visit_sets():
+# Calculate all visit sets
+	tty_polys, hbk_poly = load.loadLocPoly()
+	hbk_all_tweets = load.loadAllTweets()
+	hbk_user_home_loc = load.loadAllHomeLoc(hbk_poly)
+	hbk_users_in_gang_t = load.loadUsersInGangTty(tty_polys, hbk_user_home_loc)
+
+	# Visit matrix
+	visit_mat = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t)
+
+	# Norm vectors
+	non_home_norm = calcNonHomeNorm(visit_mat)
+	tw_freq_norm = calcTwFreqNorm(visit_mat)
+	#dist_norm = calcDistNorm()		# Different distance norm functions
+	dist_norm = calcDistNormCDF()
+
+	# Metrics- No normalization (absolute fractions)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(visit_mat), 'no_norm')
+
+	# Metrics- Non-home normalized (TO-tty normalized)
+	normalized_visit_mat = apply_non_home_norm(visit_mat, non_home_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'non_home_norm')
+
+	# Metrics- Tweet freq normalized (FROM-tty normalized)
+	normalized_visit_mat = apply_tw_freq_norm(visit_mat, tw_freq_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'tw_freq_norm')
+
+	# Metrics- Distance normalized
+	visit_mat_dist_norm = calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm, hbk_user_home_loc)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(visit_mat_dist_norm), 'dist_norm')
+
+	# Metrics- Rival count normalized
+	normalized_visit_mat = apply_rivals_norm(visit_mat)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'rivals_norm')
+
+	# Metrics- Distance + Non-home norm
+	normalized_visit_mat = apply_non_home_norm(visit_mat_dist_norm, non_home_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'dist__non_home')
+
+	# Metrics- Distance + Tweet freq norm
+	normalized_visit_mat = apply_tw_freq_norm(visit_mat_dist_norm, tw_freq_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'dist__tw_freq')
+
+	# Metrics- Distance + Rivals normalized
+	normalized_visit_mat = apply_rivals_norm(visit_mat_dist_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'dist__rivals')
+
+	# Metrics- Distance + Tweet freq + Non-home norm
+	normalized_visit_mat = apply_tw_freq_norm(visit_mat_dist_norm, tw_freq_norm)
+	normalized_visit_mat = apply_non_home_norm(normalized_visit_mat, non_home_norm)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'dist__tw_freq__non_home')
+	# Metrics- Distance + Tweet freq + Non-home + Rivals norm
+	normalized_visit_mat = apply_rivals_norm(normalized_visit_mat)
+	store_visit_set_output(calc_visit_sets_from_visit_mat(normalized_visit_mat), 'dist__tw_freq__non_home__rivals')
+
+def calc_visit_sets_from_visit_mat(visit_mat):
+# Calculate visit set from visit matrix
+	visit_sets = {}
+
+	for gang_id in my.HBK_GANG_AND_RIVAL_IDS:
+		visit_sets[gang_id] = {
+			'rival' : [],
+			'nonrival' : []
+			}
+
+		non_home_sum = sum(visit_mat[gang_id].values()) - visit_mat[gang_id][gang_id]
+
+		for rival_id in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
+			if gang_id != rival_id and visit_mat[gang_id][rival_id] != 0:
+				frac = visit_mat[gang_id][rival_id]/float(non_home_sum)
+				visit_sets[gang_id]['rival'].append(round(frac, 5))
+
+		for non_rival_id in my.HBK_GANG_ID_LIST:
+			if gang_id != non_rival_id and non_rival_id not in my.HBK_GANG_AND_RIVAL_IDS[gang_id]:
+				if visit_mat[gang_id][non_rival_id] != 0:
+					frac = visit_mat[gang_id][non_rival_id]/float(non_home_sum)
+					visit_sets[gang_id]['nonrival'].append(round(frac, 5))
+	return visit_sets
+
+
+def store_visit_set_output(visit_sets, folder_name):
+# Stores the calculated visit sets to output json file
+	if not os.path.exists('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/'):
+		os.makedirs('data/' + my.DATA_FOLDER + 'metrics/' + folder_name + '/')
+	with open('data/' + my.DATA_FOLDER + 'metrics/'  + folder_name + '/' + 'visit_sets.json', 'wb') as fp2:
+		fp2.write(anyjson.serialize(visit_sets))
+
+
 def calc_rival_nonrival_matrics():
 	tty_polys, hbk_poly = load.loadLocPoly()
 	hbk_all_tweets = load.loadAllTweets()
@@ -182,8 +270,13 @@ def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=
 	return visit_mat
 	# visit_mat[from][to] = count
 
-def calcNorm(visit_mat):
-	print 'Calculating norm vector...'
+
+
+
+# NORMALIZING FUNCTIONS
+# Calculate normalizing vectors & functions
+def calcNonHomeNorm(visit_mat):
+	print 'Calculating Non-Home norm vector...'
 	norm = {}
 	for gang_id in my.HBK_GANG_ID_LIST:
 		norm[gang_id] = 0
@@ -196,9 +289,15 @@ def calcNorm(visit_mat):
 		norm[gang_id] = float(norm[gang_id]) / float(total)
 	return norm
 
+def calcTwFreqNorm(visit_mat):
+	print 'Calculating Tweet-Freq norm vector...'
+	norm = dict([(gang_id, sum(visit_mat[gang_id].values())) for gang_id in my.HBK_GANG_ID_LIST])
+	norm = dict([(gang_id, norm[gang_id]/float(sum(norm.values()))) for gang_id in norm])
+	return norm
+
 ## Alternate distance norm measures
 def calcDistNorm():
-	calcTweetDistances()
+	#calcTweetDistances()		# Get file from findUserHomes
 	print 'Calculating distance norm vector (fraction)...'
 	norm = {}
 	for i in range(1, 101):
@@ -216,7 +315,7 @@ def calcDistNorm():
 	return norm
 
 def calcDistNormCDF():
-	calcTweetDistances()
+	#calcTweetDistances()		# Get file from findUserHomes
 	print 'Calculating distance norm vector (CDF)...'
 	frac = {}
 	for i in range(1, 101):
@@ -242,12 +341,12 @@ def calcDistNormCDF():
 	
 	return norm
 
-
 def calcTweetDistances():
 	print 'Calculating tweeting distances...'
 	_, hbk_poly = load.loadLocPoly()
 	hbk_all_tweets = load.loadAllTweets()
 	hbk_user_home_loc = load.loadAllHomeLoc(hbk_poly)
+	print [i[0] for i in hbk_user_home_loc]
 	hbk_home_list = {}
 	for user_home in hbk_user_home_loc:
 		hbk_home_list[user_home[0]] = [user_home[1], user_home[2]]
@@ -256,12 +355,44 @@ def calcTweetDistances():
 		csv_writer = csv.writer(fp, delimiter=',')
 		for tweet in hbk_all_tweets:
 			user_id = tweet[0]
+			#print tweet, hbk_home_list[user_id]
 			dist = int(round(geo.distance(geo.xyz(tweet[1], tweet[2]), geo.xyz(hbk_home_list[user_id][0], hbk_home_list[user_id][1]))))
 			csv_writer.writerow([user_id, dist])
 	print 'Done calculating tweeting distances...'
 
 
+# Apply Normalizing vectors to visit matrix
+def apply_non_home_norm(visit_mat, norm):
+	print 'Applying Non-Home tweet count normalization to visit matrix...'
+	for from_id in my.HBK_GANG_ID_LIST:
+		for to_id in my.HBK_GANG_ID_LIST:
+			if norm[to_id] != 0:
+				visit_mat[from_id][to_id] /= norm[to_id]
+			else:
+				visit_mat[from_id][to_id] = 0
+	return visit_mat
 
+def apply_tw_freq_norm(visit_mat, norm):
+	print 'Applying Tweet freq normalization to visit matrix...'
+	for from_id in my.HBK_GANG_ID_LIST:
+		for to_id in my.HBK_GANG_ID_LIST:
+			if norm[from_id] != 0:
+				visit_mat[from_id][to_id] /= norm[from_id]
+			else:
+				visit_mat[from_id][to_id] = 0
+	return visit_mat
+
+def apply_rivals_norm(visit_mat):
+	norm = dict([(gang_id, len(my.HBK_GANG_AND_RIVAL_IDS[gang_id])) for gang_id in my.HBK_GANG_AND_RIVAL_IDS])
+	norm = dict([(gang_id, norm[gang_id]/float(len(my.HBK_GANG_ID_LIST))) for gang_id in norm])
+	print 'Applying Rival count normalization to visit matrix...'
+	for from_id in my.HBK_GANG_ID_LIST:
+		for to_id in my.HBK_GANG_ID_LIST:
+			if norm[from_id] != 0:
+				visit_mat[from_id][to_id] /= norm[from_id]
+			else:
+				visit_mat[from_id][to_id] = 0
+	return visit_mat
 
 #- CALC functions
 

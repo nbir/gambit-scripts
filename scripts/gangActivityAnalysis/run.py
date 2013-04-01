@@ -16,7 +16,9 @@ import argparse
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-g', '--get', nargs='*', help='\
-		[all - Get all tweets inside bounds]')
+		[all - Get all tweets inside bounds] \n\
+		[jtc - Convert JTC data to my.data] ' )
+	
 	parser.add_argument('-p', '--prep', nargs='*', help='\
 		[trim-home - Trim home clusters in data] \n\
 		[trim-ngang - Trim all non gang users in data] \n\
@@ -25,9 +27,12 @@ if __name__ == '__main__':
 		[trim-lines - Trim tweets near border lines] \n\
 		[trim-pols - Trim tweets inside polygons] ')
 	parser.add_argument('-c', '--calc', nargs='*', help='\
+		[metrics - Calculate all metrics] \n\
 		[rnr|rivalnonrival - Calculate rival-nonrival visit metrics] \n\
 		[rnr-dist|rivalnonrival-dist - Calculate rival-nonrival visit metrics using distance norm] ')
 	parser.add_argument('-o', '--out', nargs='*', help='\
+		[metrics - Generate output metric files] \n\
+		[charts - Generate output metric charts] \n\
 		[rnr|rivalnonrival - Generate output for rival-nonrival metrics] \n\
 		[rnr-dist|rivalnonrival-dist - Generate output for rival-nonrival metrics using distance norm] \n\
 		\
@@ -47,6 +52,10 @@ if __name__ == '__main__':
 		if 'all' in args.get:
 			print '\n*** Get all tweets inside bounds ***\n'
 			do.get_tweets_in()
+		# Data convertion
+		if 'jtc' in args.get:
+			print '\n*** Convert JTC data to my.data ***\n'
+			do.convert_jtc_data()
 
 	if args.prep:
 		import bin.prep_fun as do
@@ -71,6 +80,9 @@ if __name__ == '__main__':
 
 	if args.calc:
 		import bin.calc_fun as do
+		if 'metrics' in args.calc or 'rivalnonrival' in args.calc:
+			print '\n*** Calculate all metrics ***\n'
+			do.calc_visit_sets()
 		if 'rnr' in args.calc or 'rivalnonrival' in args.calc:
 			print '\n*** Calculate rival-nonrival visit metrics ***\n'
 			do.calc_rival_nonrival_matrics()
@@ -80,6 +92,12 @@ if __name__ == '__main__':
 
 	if args.out:
 		import bin.out_fun as do
+		if 'metrics' in args.out:
+			print '\n*** Generate output metric files ***\n'
+			do.generate_outputs_files()
+		if 'charts' in args.out:
+			print '\n*** Generate output metric charts ***\n'
+			do.generate_outputs_charts()
 		if 'rnr' in args.out or 'rivalnonrival' in args.out:
 			print '\n*** Generate output for rival-nonrival metrics ***\n'
 			do.generate_output()
