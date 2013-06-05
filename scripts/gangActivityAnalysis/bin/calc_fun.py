@@ -13,6 +13,7 @@ import settings as my
 
 import csv
 import anyjson
+import pickle
 import lib.geo as geo
 import lib.PiP_Edge as pip
 
@@ -233,26 +234,36 @@ def arr_to_str(arr):
 
 
 # CALC functions
-def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=None, hbk_user_home_loc=None):
+def calcVisitationMat__NEW(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=None, hbk_user_home_loc=None):
 # visit_mat[i][j] = #tw(i) in j
 	print 'Calculating visitation matrix...'
-
+	
 	hbk_home_list = {}
 	if dist_norm:
 		print '...for distance norm.'
 		for user_home in hbk_user_home_loc:
 			hbk_home_list[user_home[0]] = [user_home[1], user_home[2]]
 
+	hbk_user_gang_list = []
+	for gang_id in hbk_users_in_gang_t:
+		hbk_user_gang_list.extend([(user_id, gang_id) for user_id in hbk_users_in_gang_t[gang_id]])
+	hbk_user_gang_list = dict(hbk_user_gang_list)
+
 	visit_mat = {}
 	for gang_id in my.HBK_GANG_ID_LIST:
 		visit_mat[gang_id] = {}
+		for to_id in my.HBK_GANG_ID_LIST:
+			visit_mat[gang_id][to_id] = 0
 
-	for gang_id in my.HBK_GANG_ID_LIST:
-		if gang_id not in hbk_users_in_gang_t:
-			for to_id in my.HBK_GANG_ID_LIST:
-				visit_mat[gang_id][to_id] = 0
-				#visit_mat[to_id][gang_id] = 0
-		else:
+	for tweet in hbk_all_tweets:
+		from_id = hbk_user_gang_list[tweet[0]]
+		for to_id in tty_polys:
+			if pip.point_in_poly(tweet[1], tweet[2], tty_polys[to_id]):
+				visit_mat[from_id][to_id] += 1
+
+
+	'''for gang_id in my.HBK_GANG_ID_LIST:
+		if gang_id in hbk_users_in_gang_t:
 			this_gang_tweets = prep.keepUserIds(hbk_all_tweets, hbk_users_in_gang_t[gang_id])
 			for to_id in my.HBK_GANG_ID_LIST:
 				this_tty_tweets = prep.keepPolygon(this_gang_tweets, tty_polys[to_id])
@@ -266,9 +277,64 @@ def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=
 						visit_val += 1/dist_norm[dist_i]
 						#print str(dist_i) + '\t=>\t' + str(1/dist_norm[dist_i])
 					visit_mat[gang_id][to_id] = round(visit_val, 5)
-	print 'Done calculating visitation matrix...'
+	print 'Done calculating visitation matrix...'''
 	return visit_mat
-	# visit_mat[from][to] = count
+
+def calcVisitationMat(hbk_all_tweets, tty_polys, hbk_users_in_gang_t, dist_norm=None, hbk_user_home_loc=None):
+# visit_mat[i][j] = #tw(i) in j
+	print 'Calculating visitation matrix...'
+
+	# Load visit matrix .pickle if exists
+	if not dist_norm and os.path.exists('data/' + my.DATA_FOLDER + 'json/visit_mat.pickle'):
+		with open('data/' + my.DATA_FOLDER  + 'json/' + 'visit_mat.pickle', 'rb') as fp1:
+			visit_mat = pickle.load(fp1)
+	elif dist_norm and os.path.exists('data/' + my.DATA_FOLDER + 'json/visit_mat__dist_norm.pickle'):
+		with open('data/' + my.DATA_FOLDER  + 'json/' + 'visit_mat__dist_norm.pickle', 'rb') as fp1:
+			visit_mat = pickle.load(fp1)
+	# Calculate visit matrix is .pickle doesn't exist
+	else:
+		hbk_home_list = {}
+		if dist_norm:
+			print '...for distance norm.'
+			for user_home in hbk_user_home_loc:
+				hbk_home_list[user_home[0]] = [user_home[1], user_home[2]]
+
+		visit_mat = {}
+		for gang_id in my.HBK_GANG_ID_LIST:
+			visit_mat[gang_id] = {}
+
+		for gang_id in my.HBK_GANG_ID_LIST:
+			if gang_id not in hbk_users_in_gang_t:
+				for to_id in my.HBK_GANG_ID_LIST:
+					visit_mat[gang_id][to_id] = 0
+					#visit_mat[to_id][gang_id] = 0
+			else:
+				this_gang_tweets = prep.keepUserIds(hbk_all_tweets, hbk_users_in_gang_t[gang_id])
+				for to_id in my.HBK_GANG_ID_LIST:
+					this_tty_tweets = prep.keepPolygon(this_gang_tweets, tty_polys[to_id])
+					if dist_norm == None:
+						visit_mat[gang_id][to_id] = len(this_tty_tweets)
+					else:
+						visit_val = 0
+						for tweet in this_tty_tweets:
+							dist = geo.distance(geo.xyz(tweet[1], tweet[2]), geo.xyz(hbk_home_list[tweet[0]][0], hbk_home_list[tweet[0]][1]))
+							dist_i = int(round(dist/100 + 1))
+							visit_val += 1/dist_norm[dist_i]
+							#print str(dist_i) + '\t=>\t' + str(1/dist_norm[dist_i])
+						visit_mat[gang_id][to_id] = round(visit_val, 5)
+		print 'Done calculating visitation matrix...'
+
+		# Store visit matrix .pickle
+		if not os.path.exists('data/' + my.DATA_FOLDER + 'json/'):
+			os.makedirs('data/' + my.DATA_FOLDER + 'json/')
+		if not dist_norm:
+			with open('data/' + my.DATA_FOLDER  + 'json/' + 'visit_mat.pickle', 'wb') as fp1:
+				pickle.dump(visit_mat, fp1)
+		else:
+			with open('data/' + my.DATA_FOLDER  + 'json/' + 'visit_mat__dist_norm.pickle', 'wb') as fp1:
+				pickle.dump(visit_mat, fp1)
+
+	return visit_mat
 
 
 

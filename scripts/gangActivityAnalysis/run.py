@@ -44,6 +44,9 @@ if __name__ == '__main__':
 
 	parser.add_argument('-s', '--see', nargs='*', help='\
 		gang-tw - See each gang\'s tweet count\n\
+		visit-mat - See Visit matrix \n\
+		rivalry-mat - See Rivalry matrix \n\
+		rivalry-list - See Rivalry list \n\
 		test - Call test function')
 	args = parser.parse_args()
 
@@ -126,6 +129,16 @@ if __name__ == '__main__':
 		if 'gang-tw' in args.see:
 			print '\n*** See each gang\'s tweet count ***\n'
 			do.see_gang_tweet_counts()
+		if 'visit-mat' in args.see:
+			print '\n*** See Visit matrix ***\n'
+			do.see_visit_mat()
+		if 'rivalry-mat' in args.see:
+			print '\n*** See Rivalry matrix ***\n'
+			do.see_rivalry_mat()
+		if 'rivalry-list' in args.see:
+			print '\n*** See Rivalry list ***\n'
+			do.see_rivalry_list()
+		
 		if 'test' in args.see:
 			print '\n*** Test, Test. Test! ***\n'
 			do.test()
