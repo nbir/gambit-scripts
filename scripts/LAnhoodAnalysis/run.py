@@ -68,16 +68,7 @@ if __name__ == '__main__':
 			find.join_daily_disp()
 
 	if args.calc:
-		import src.calc_visits as calc
-		if 'activity' in args.calc:
-			print '\n*** Calculating activity between nhoods ***\n'
-			calc.calc_activity()
-		if 'visits' in args.calc:
-			print '\n*** Calculating visits between nhoods ***\n'
-			calc.calc_visits()
-		if 'visitors' in args.calc:
-			print '\n*** Calculating visitors between nhoods ***\n'
-			calc.calc_visitors()
+		import src.calc as calc
 		if 'visit-mat' in args.calc:
 			print '\n*** Saving visit matrices to JSON ***\n'
 			calc.save_visitMatJSONs()

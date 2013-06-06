@@ -13,7 +13,7 @@
 #DATA_FOLDER = 'hbk/'
 
 #DATA_FOLDER = 'south-la/'
-DATA_FOLDER = 'west-la/'
+#DATA_FOLDER = 'west-la/'
 #DATA_FOLDER = 'south-bay/'
 
 #DATA_FOLDER = 'pomona/'
