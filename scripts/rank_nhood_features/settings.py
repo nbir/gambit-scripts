@@ -10,7 +10,7 @@
 # Folders
 #DATA_FOLDER = 'all-hoods/'
 #DATA_FOLDER = 'hbk/'
-DATA_FOLDER = 'west-la/'
-#DATA_FOLDER = 'south-la/'
+#DATA_FOLDER = 'west-la/'
+DATA_FOLDER = 'south-la/'
 #DATA_FOLDER = 'south-bay/'
 

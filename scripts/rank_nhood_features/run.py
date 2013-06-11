@@ -26,6 +26,7 @@ if __name__ == '__main__':
 
 		if 'rank' in args.do:
 			print '\n*** Calc & Plot ***\n'
+			do.calc_featAndPlot(folder='activity', file_name='activity_mat')
 			do.calc_featAndPlot(folder='visits', file_name='visit_mat')
 			do.calc_featAndPlot(folder='visitors', file_name='visitor_mat')
 

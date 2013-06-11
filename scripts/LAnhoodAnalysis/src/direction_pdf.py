@@ -26,6 +26,8 @@ sys.path.insert(0, os.path.abspath('..'))
 # DIRECTION OF DISPLACEEMENT - PDF FUNCTION PLOT
 #
 COLORS = {'hbk': '#377EB8',
+		'hbk_old': '#377EB8',
+		'hbk_old2': '#377EB8',
 		'south-la' : '#FA71AF',
 		'west-la' : '#4DAF4A',
 		'south-bay' : '#A65628',
@@ -107,7 +109,7 @@ def _plot_dir_pdf(Y):
 	'''Plot direction PDF function of a polar graph'''
 	fig = plt.figure(figsize=(6,6))
 	ax = fig.add_subplot(111, projection='polar')
-	#plt.subplots_adjust(left=0.075, right=0.96, top=0.92, bottom=0.08)
+	plt.subplots_adjust(left=0.17, right=0.92, top=0.98, bottom=0.08)
 	#ax.set_autoscaley_on(False)
 	#ax.set_ylim([0,0.1])
 	#ax.set_xlim(0, RANGE[1])
@@ -115,9 +117,24 @@ def _plot_dir_pdf(Y):
 	theta = numpy.radians(x)
 
 	for y in Y:
-		y = numpy.array(y)
-		label = my.DATA_FOLDER[:-1]
+		y_ 		= y
+		y 		= numpy.array(y)
+		label 	= my.DATA_FOLDER[:-1]
 		ax.plot(theta, y, label=label.upper(), color=COLORS[label], alpha=0.95)
+
+		a = round(sum(y[:180/BIN_SIZE]), 2)
+		b = round(sum(y[180/BIN_SIZE:]), 2)
+		ax.text(-0.18, 0.5, '{a}\n------\n{b}'.format(a=a, b=b), horizontalalignment='left', verticalalignment='center', transform = ax.transAxes, fontsize=12, backgroundcolor='#000000', color='#ffffff')
+		a = round(sum(y[45/BIN_SIZE:225/BIN_SIZE]), 2)
+		b = round(sum(y[:45/BIN_SIZE]) + sum(y[225/BIN_SIZE:]), 2)
+		ax.text(0, 0.0, '{a} // {b}'.format(a=a, b=b), horizontalalignment='left', verticalalignment='bottom', transform = ax.transAxes, fontsize=12, backgroundcolor='#000000', color='#ffffff')
+		a = round(sum(y[90/BIN_SIZE:270/BIN_SIZE]), 2)
+		b = round(sum(y[0:90/BIN_SIZE]) + sum(y[270/BIN_SIZE:]), 2)
+		ax.text(0.5, -0.15, '{a} | {b}'.format(a=a, b=b), horizontalalignment='center', verticalalignment='bottom', transform = ax.transAxes, fontsize=12, backgroundcolor='#000000', color='#ffffff')
+		a = round(sum(y[:135/BIN_SIZE]) + sum(y[315/BIN_SIZE:]), 2)
+		b = round(sum(y[135/BIN_SIZE:315/BIN_SIZE]), 2)
+		ax.text(1, 0.0, '{b} \\\ {a}'.format(a=a, b=b), horizontalalignment='right', verticalalignment='bottom', transform = ax.transAxes, fontsize=12, backgroundcolor='#000000', color='#ffffff')
+
 	ax.legend()
 	plt.savefig('data/' + my.DATA_FOLDER + 'displacement/' + 'plot_disp_direction' + '.png')
 

@@ -43,8 +43,17 @@ def calc_activity():
 	if not activity_mat__dist_norm:
 		activity_mat__dist_norm = _calc_activity_mat(dist_norm=True)
 		_save_matrix('activity', 'activity_mat__dist_norm', activity_mat__dist_norm)
+	activity_mat__dtf_norm = _apply_twfreq_norm(activity_mat__dist_norm, activity_mat)
+	_save_matrix('activity', 'activity_mat__dtf_norm', activity_mat__dtf_norm)
+	activity_mat__din_norm = _apply_infreq_norm(activity_mat__dist_norm, activity_mat)
+	_save_matrix('activity', 'activity_mat__din_norm', activity_mat__din_norm)
+	activity_mat__dtfin_norm = _apply_infreq_norm(activity_mat__dtf_norm, activity_mat)
+	_save_matrix('activity', 'activity_mat__dtfin_norm', activity_mat__dtfin_norm)
+
 	_show_matrix(activity_mat)
 	_show_matrix(activity_mat__dist_norm)
+	_show_matrix(activity_mat__dtf_norm)
+	_show_matrix(activity_mat__din_norm)
 
 def _calc_activity_mat(dist_norm=False):
 	'''Calculate activity matrix for all neighborhoods in region'''
@@ -125,8 +134,17 @@ def calc_visits():
 	if not visit_mat__dist_norm:
 		visit_mat__dist_norm = _calc_visit_mat(dist_norm=True)
 		_save_matrix('visits', 'visit_mat__dist_norm', visit_mat__dist_norm)
+	visit_mat__dtf_norm = _apply_twfreq_norm(visit_mat__dist_norm, visit_mat)
+	_save_matrix('visits', 'visit_mat__dtf_norm', visit_mat__dtf_norm)
+	visit_mat__din_norm = _apply_infreq_norm(visit_mat__dist_norm, visit_mat)
+	_save_matrix('visits', 'visit_mat__din_norm', visit_mat__din_norm)
+	visit_mat__dtfin_norm = _apply_infreq_norm(visit_mat__dtf_norm, visit_mat)
+	_save_matrix('visits', 'visit_mat__dtfin_norm', visit_mat__dtfin_norm)
+
 	_show_matrix(visit_mat)
 	_show_matrix(visit_mat__dist_norm)
+	_show_matrix(visit_mat__dtf_norm)
+	_show_matrix(visit_mat__din_norm)
 	
 def _calc_visit_mat(dist_norm=False):
 	'''Calculate visit matrix for all neighborhoods in region'''
@@ -239,7 +257,6 @@ def _calc_visitor_mat():
 	return mat
 
 
-################################################################################
 #
 # NORMALIZE
 #
@@ -258,39 +275,53 @@ def _calc_dist_norm():
 	cdf = {}
 	for i in range(1, 151):
 		cdf[i] = sum([frac[j] for j in range(1, i+1)])/float(count)
-	
 	norm = {}
 	for i in range(1, 151):
 		norm[i] = 1-cdf[i]		# dist_norm_3
 	
 	return norm
 
-# Tweet frequency normalization
-def _apply_TwFreqNorm(visit_mat, visit_mat__norm=None):
-	if visit_mat__norm:
-		norm = _calc_TwFreqNorm(visit_mat__norm)
+def _apply_twfreq_norm(mat, mat__norm=None):
+	'''Apply Tweet frequency normalization'''
+	if mat__norm:
+		norm = dict((nid, sum(mat__norm[nid].values()) - mat__norm[nid][nid]) for nid in mat__norm)
+		norm = dict((nid, norm[nid]/float(sum(norm.values()))) for nid in norm)
 	else:
-		norm = _calc_TwFreqNorm(visit_mat)
+		norm = dict((nid, sum(mat[nid].values()) - mat[nid][nid]) for nid in mat)
+		norm = dict((nid, norm[nid]/float(sum(norm.values()))) for nid in norm)
 
-	visit_mat__out = dict([(from_id, dict()) for from_id in visit_mat])
-
-	for from_id in visit_mat:
-		for to_id in visit_mat:
+	mat__out = dict((from_id, dict()) for from_id in mat)
+	for from_id in mat:
+		for to_id in mat:
 			if norm[from_id] != 0:
-				visit_mat__out[from_id][to_id] = visit_mat[from_id][to_id] / norm[from_id]
+				mat__out[from_id][to_id] = mat[from_id][to_id] / norm[from_id]
 			else:
-				visit_mat__out[from_id][to_id] = 0
+				mat__out[from_id][to_id] = 0
 
-	return visit_mat__out
+	return mat__out
 
-def _calc_TwFreqNorm(visit_mat):
-	norm = dict([(nid, sum(visit_mat[nid].values())) for nid in visit_mat])
-	norm = dict([(nid, norm[nid]/float(sum(norm.values()))) for nid in norm])
+def _apply_infreq_norm(mat, mat__norm=None):
+	'''Apply incoming tw frequency normalization'''
+	if mat__norm:
+		norm = dict((to_id, sum([mat__norm[from_id][to_id] for from_id in mat__norm if from_id != to_id])) 
+					for to_id in mat__norm)
+		norm = dict((nid, norm[nid]/float(sum(norm.values()))) for nid in norm)
+	else:
+		norm = dict((to_id, sum([mat[from_id][to_id] for from_id in mat if from_id != to_id])) 
+					for to_id in mat)
+		norm = dict((nid, norm[nid]/float(sum(norm.values()))) for nid in norm)
 
-	return norm
+	mat__out = dict((from_id, dict()) for from_id in mat)
+	for from_id in mat:
+		for to_id in mat:
+			if norm[to_id] != 0:
+				mat__out[from_id][to_id] = mat[from_id][to_id] / norm[to_id]
+			else:
+				mat__out[from_id][to_id] = 0
+
+	return mat__out	
 
 
-################################################################################
 #
 # UTILITY FUNCTIONS
 #

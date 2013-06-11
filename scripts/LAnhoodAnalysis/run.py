@@ -43,16 +43,17 @@ if __name__ == '__main__':
 			db.store_hbk_hoods_db()
 
 	if args.find:
+	# python run.py -f disp disp-join disp-super disp-plot wed-plot dir-pdf
 		import src.find_disp as find
 		if 'disp' in args.find:
 			print '\n*** Find daily max displacement for each users ***\n'
 			find.find_daily_disp()
-		if 'disp-super' in args.find:
-			print '\n*** Plot displacement from home for all users in region ***\n'
-			find.plot_super_disp_plot()
 		if 'disp-join' in args.find:
 			print '\n*** Join max displacement for all users into one file ***\n'
 			find.join_daily_disp()
+		if 'disp-super' in args.find:
+			print '\n*** Plot displacement from home for all users in region ***\n'
+			find.plot_super_disp_plot()
 
 		import src.disp_stat as stat
 		if 'disp-plot' in args.find:
@@ -61,6 +62,7 @@ if __name__ == '__main__':
 		if 'wed-plot' in args.find:
 			print '\n*** Plot charts for daily max displacement (Weekday/Weekend) ***\n'
 			stat.out_user_disp_plot_weekday()
+
 		if 'disp-plot-all' in args.find:
 			import src.disp_combined as out1
 			print '\n*** Plot Power Law fits for regions on single plot ***\n'
@@ -76,6 +78,7 @@ if __name__ == '__main__':
 		pass
 
 	if args.out:
+	# python run.py -o region nhood-pts
 		import src.out as out
 		if 'region' in args.out:
 			print '\n*** Output: JSON of all homes and latlng in region ***\n'
@@ -83,11 +86,6 @@ if __name__ == '__main__':
 		if 'nhood-pts' in args.out:
 			print '\n*** Output: JSON of latlng by users of each nhood in region ***\n'
 			out.out_hoodwise_latlng_json()	
-
-
-		if 'disp-map' in args.out:
-			print '\n*** Plot displacement for all users in region on map ***\n'
-			out.out_disp_map()
 
 	if args.test:
 		import src.test as test

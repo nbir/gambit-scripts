@@ -13,35 +13,19 @@ import argparse
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-p', '--prep', nargs='*', help='\
-		[trim-visit-mat - Trim visit matrix for min tweet bound] \n\
-		[make-feat-mat - Build feature matrix] ')
-	parser.add_argument('-c', '--calc', nargs='*', help='\
-		[cluster - Apply Cluster analysis] ')
-	parser.add_argument('-o', '--out', nargs='*', help='\
-		')
-
-	parser.add_argument('-s', '--see', nargs='*', help='\
-		test - Call test function')
+	parser.add_argument('-c', '--calc', nargs='*')
+	parser.add_argument('-p', '--plot', nargs='*')
+	parser.add_argument('-t', '--test', nargs='*')
 	args = parser.parse_args()
-
-	if args.prep:
-		import src.prep_fun as do
-		if 'trim-visit-mat' in args.prep:
-			print '\n*** Trim visit matrix for min tweet bound ***\n'
-			do.trim_visit_mat()
-		if 'make-feat-mat' in args.prep:
-			print '\n*** Build feature matrix ***\n'
-			do.make_feature_mat()
 	
 	if args.calc:
-		import src.clust_fun as clust
-		if 'cluster' in args.calc:
-			print '\n*** Apply Cluster analysis ***\n'
-			clust.cluster_all()
+		import src.predict_rivalry as predict
+		if 'predict' in args.calc:
+			print '\n*** Predict rivalry network ***\n'
+			predict.predict_rivalry('activity/', 'activity_mat')
 
-	if args.see:
-		import src.see_fun as do
-		if 'test' in args.see:
-			print '\n*** Test, Test. Test! ***\n'
-			do.test()
+	if args.plot:
+		import src.predict_rivalry as plot
+		if 'net' in args.plot:
+			print '\n*** Plot rivalry network ***\n'
+			plot.plot_rivalry('activity/', 'activity_mat')

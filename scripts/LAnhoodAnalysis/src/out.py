@@ -31,20 +31,35 @@ sys.path.insert(0, os.path.abspath('..'))
 #
 def out_homes_and_points_json():
 	'''Output: JSON of all homes and latlng in region'''
-	with open('data/' + my.DATA_FOLDER + 'user_list.json', 'rb') as fpr:
-		user_ids = anyjson.loads(fpr.read())
-	user_ids = [int(user_id) for user_id in user_ids]
-	print 'Read {0} user_ids'.format(len(user_ids))
+	if os.path.exists('data/' + my.DATA_FOLDER + 'user_list.json'):
+		with open('data/' + my.DATA_FOLDER + 'user_list.json', 'rb') as fpr:
+			user_ids = anyjson.loads(fpr.read())
+		user_ids = [int(user_id) for user_id in user_ids]
+		print 'Read {0} user_ids'.format(len(user_ids))
 
-	SQL = 'SELECT user_id, ST_X(geo), ST_Y(geo)\
-		FROM {rel_home} \
-		WHERE user_id IN %s'.format(rel_home=my.REL_HOME)
+		SQL = 'SELECT user_id, ST_X(geo), ST_Y(geo)\
+			FROM {rel_home} \
+			WHERE user_id IN %s'.format(rel_home=my.REL_HOME)
 
-	con = psycopg2.connect(my.DB_CONN_STRING)
-	cur = con.cursor()
-	cur.execute(SQL, (tuple(user_ids), ))
-	recs = cur.fetchall()
-	homes = [[rec[1], rec[2]] for rec in recs]
+		con = psycopg2.connect(my.DB_CONN_STRING)
+		cur = con.cursor()
+		cur.execute(SQL, (tuple(user_ids), ))
+		recs = cur.fetchall()
+		homes = [[rec[1], rec[2]] for rec in recs]
+
+	else:
+		with open('data/' + my.DATA_FOLDER + 'bound_pol.txt', 'rb') as fpr:
+			bound_pol = fpr.read().strip()
+		SQL = 'SELECT user_id, ST_X(geo), ST_Y(geo)\
+			FROM {rel_home} \
+			WHERE geo && ST_GeomFromGeoJSON(%s)'.format(rel_home=my.REL_HOME)
+
+		con = psycopg2.connect(my.DB_CONN_STRING)
+		cur = con.cursor()
+		cur.execute(SQL, (bound_pol, ))
+		recs = cur.fetchall()
+		user_ids = [rec[0] for rec in recs]
+		homes = [[rec[1], rec[2]] for rec in recs]
 
 	SQL = 'SELECT ST_X(geo), ST_Y(geo)\
 		FROM {rel_tweet} \

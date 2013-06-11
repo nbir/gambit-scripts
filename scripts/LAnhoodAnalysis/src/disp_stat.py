@@ -19,6 +19,7 @@ from pylab import *
 from PIL import Image
 from pprint import pprint
 from datetime import datetime
+from scipy.stats import ks_2samp
 from scipy.optimize import leastsq
 from matplotlib.ticker import FuncFormatter
 from matplotlib.backends.backend_pdf import PdfPages
@@ -130,12 +131,18 @@ def _plot_hist(x, nbins, range, file_name):
 	powerlaw = lambda x, amp, index: amp * (x**index)
 	ax.plot(x, powerlaw(x, amp, index), \
 		label = 'fit: y = %s x ^%s' % (round(amp,3), round(index,3)), color='#E41A1C') 
-	ax.text(0.95, 0.95, \
-		'<{0}m = {1}%\n >{2}km = {3}%\n 100m-2km = {4}%'.format(range[0], sum(h_prev)*100, range[1]/1000, sum(h_after)*100, h_100_2k*100) + \
-		'\nfit: y = {0} x^{1}'.format(round(amp,3), round(index,3)), \
-		 horizontalalignment='right', verticalalignment='top', transform = ax.transAxes, fontsize=10)
-	ax.set_title(title, fontsize=11)
+	info = '<{0}m = {1}%\n >{2}km = {3}%\n 100m-2km = {4}%'.format(range[0], sum(h_prev)*100, \
+															range[1]/1000, sum(h_after)*100, h_100_2k*100) + \
+		   '\nfit: y = {0} x^{1}'.format(round(amp,3), round(index,3))
 
+	#KS Statistics
+	y_ = powerlaw(x, amp, index)
+	d, p = ks_2samp(y, y_)
+	#print 'D, p: ', d, p
+	info += '\nKS statistic: {0}\np: {1}'.format(round(d,5), round(p,5))
+
+	ax.text(0.95, 0.95, info, horizontalalignment='right', verticalalignment='top', transform = ax.transAxes, fontsize=10)
+	ax.set_title(title, fontsize=11)
 	if not os.path.exists('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/'):
 		os.makedirs('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/')
 	plt.savefig('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/' + file_name + '.png')

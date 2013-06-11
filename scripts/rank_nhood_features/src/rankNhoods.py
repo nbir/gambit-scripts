@@ -7,23 +7,22 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
-import settings as my
-import lib.geo as geo
-
 import csv
 import pickle
 import anyjson
 import psycopg2
-from pprint import pprint
+import matplotlib
+import numpy as np
+import lib.geo as geo
+import matplotlib.pyplot as plt
 
 from math import *
-import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.collections import PolyCollection
 from pylab import *
+from pprint import pprint
+from matplotlib.collections import PolyCollection
 
+import settings as my
+sys.path.insert(0, os.path.abspath('..'))
 
 
 def calc_featAndPlot(folder='visits', file_name='visit_mat'):
@@ -53,6 +52,9 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 	'ENTROPY_OUT_ALL' : ENTROPY_OUT_ALL,
 	'ENTROPY_IN' : ENTROPY_IN,
 	'ENTROPY_IN_ALL' : ENTROPY_IN_ALL}
+
+	with open('data/' + my.DATA_FOLDER  + 'features_' + folder + '.pickle', 'wb') as fp1:
+		pickle.dump(features, fp1)
 
 	feature_names = ['OUTFLOW_INFLOW', 'IN_DENSITY', 'OUT_DENSITY', 'POPULARITY', 'ENTROPY_OUT', 'ENTROPY_OUT_ALL', 'ENTROPY_IN', 'ENTROPY_IN_ALL']
 	colors = ["#4DAF4A","#3B3B3B","#984EA3","#E41A1C","#A65628","#FA71AF","#FF7F00","#377EB8"]
@@ -125,8 +127,9 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 	plt.savefig('data/' + my.DATA_FOLDER + folder + '/' + 'hood_rank_map__' + my.DATA_FOLDER[:-1] + '.png')
 
 
-
+#
 # LOAD functions
+#
 _load_nhoodIDs = lambda: [int(nid) for nid in anyjson.loads(open('data/' + my.DATA_FOLDER + 'hood_ids.txt', 'rb').read())]
 _load_hoodInfo = lambda: dict([(int(loc['id']), loc) for loc in anyjson.loads(open('data/' + my.DATA_FOLDER + 'loc_data.json', 'rb').read())])
 _load_visitMat = lambda folder, file_name: pickle.load(open('data/' + my.DATA_FOLDER  + folder + '/' + file_name + '.pickle', 'rb'))
@@ -135,7 +138,9 @@ _calc_visitMatFrac = lambda visit_mat: dict([(from_id, dict([(to_id, visit_mat[f
 					if sum(visit_mat[from_id].values()) != 0 else (to_id, 0) for to_id in visit_mat[from_id]])) for from_id in visit_mat])
 
 
+#
 # CALC FEATURES
+#
 _calc_inflowVsOutflow = lambda h_id, visit_mat: sum([visit_mat[from_id][h_id] for from_id in visit_mat if from_id != h_id]) - \
 									sum([visit_mat[h_id][to_id] for to_id in visit_mat[h_id] if to_id != h_id])
 					

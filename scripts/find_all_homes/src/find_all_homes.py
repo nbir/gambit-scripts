@@ -50,8 +50,9 @@ def get_min_tweet_users():
 		WHERE extract(hour FROM timestamp AT TIME ZONE \'{timezone}\') IN %s '.format(rel_tweet=my.REL_TWEET, 
 										rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD, timezone=my.TIMEZONE) \
 		+ my.QUERY_CONSTRAINT + \
-		'GROUP BY user_id \
-		ORDER BY count DESC'
+		'{pol_const} \
+		GROUP BY user_id \
+		ORDER BY count DESC'.format(pol_const=my.POL_CONSTRAINT)
 
 	con = psycopg2.connect(my.DB_CONN_STRING)
 	cur = con.cursor()
@@ -114,8 +115,9 @@ def _find_and_store_home(user_id):
 		WHERE user_id = %s \
 		AND extract(hour FROM timestamp AT TIME ZONE \'{timezone}\') IN %s '.format(rel_tweet=my.REL_TWEET, 
 										rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD, timezone=my.TIMEZONE) \
-		+ my.QUERY_CONSTRAINT \
-		+ 'ORDER BY timestamp'
+		+ my.QUERY_CONSTRAINT + \
+		'{pol_const} \
+		 ORDER BY timestamp'.format(pol_const=my.POL_CONSTRAINT)
 
 	con = psycopg2.connect(my.DB_CONN_STRING)
 	cur = con.cursor()

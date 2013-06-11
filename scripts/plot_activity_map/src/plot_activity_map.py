@@ -32,19 +32,24 @@ sys.path.insert(0, os.path.abspath('..'))
 #
 def plot_activity_on_map():
 	'''Plot displacement for all users in region on map'''
-	#_plot_disp_map(['hbk'], file_name='hbk')
-	#_plot_disp_map(['south-la'], file_name='south-la')
-	#_plot_disp_map(['west-la'], file_name='west-la')
-	#_plot_disp_map(['south-bay'], file_name='south-bay')
+	if not os.path.exists('data/' + my.DATA_FOLDER + '_plots/'):
+		os.makedirs('data/' + my.DATA_FOLDER + '_plots/')
+	if not os.path.exists('data/' + my.DATA_FOLDER + '_plots_map/'):
+		os.makedirs('data/' + my.DATA_FOLDER + '_plots_map/')
 
-	#_plot_disp_map(['pomona'], file_name='pomona')
+	_plot_disp_map(['hbk'], file_name='hbk')
+	_plot_disp_map(['south-la'], file_name='south-la')
+	_plot_disp_map(['west-la'], file_name='west-la')
+	_plot_disp_map(['south-bay'], file_name='south-bay')
+
+	_plot_disp_map(['pomona'], file_name='pomona')
 	_plot_disp_map(['bernardino'], file_name='bernardino')
-	#_plot_disp_map(['riverside'], file_name='riverside')
+	_plot_disp_map(['riverside'], file_name='riverside')
 	
-	#_plot_disp_map(['hbk', 'south-la', 'west-la', 'south-bay'], file_name='hbk_sla_wla_bay')
-	#_plot_disp_map(['pomona', 'bernardino', 'riverside'], file_name='pom_ber_riv')
+	_plot_disp_map(['hbk', 'south-la', 'west-la', 'south-bay'], file_name='hbk_sla_wla_bay')
+	_plot_disp_map(['pomona', 'bernardino', 'riverside'], file_name='pom_ber_riv')
 
-	#_plot_disp_map(['hbk', 'south-la', 'west-la', 'south-bay', 'pomona', 'bernardino', 'riverside'], file_name='hswspbr')
+	_plot_disp_map(['hbk', 'south-la', 'west-la', 'south-bay', 'pomona', 'bernardino', 'riverside'], file_name='hswspbr')
 
 def _plot_disp_map(folders, file_name='disp-map'):
 	'''Generate multi colored plot for all specified folders'''
@@ -87,6 +92,6 @@ def _plot_disp_map(folders, file_name='disp-map'):
 	ax.get_frame().set_alpha(0)
 	background = matplotlib.image.imread('data/' + my.DATA_FOLDER + 'map.png')
 	ax.imshow(background, aspect='auto', extent=(-118.64, -117.09, 33.5, 34.29), alpha=0.5)
-	plt.savefig('data/' + my.DATA_FOLDER + '_plots-map/' + file_name + '.png')
+	plt.savefig('data/' + my.DATA_FOLDER + '_plots_map/' + file_name + '.png')
 
 

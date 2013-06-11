@@ -13,10 +13,15 @@
 #DATA_FOLDER = 'west-la/'
 #DATA_FOLDER = 'south-bay/'
 
+#DATA_FOLDER = 'hbk_old/'
+DATA_FOLDER = 'hbk_old2/'
+
 
 # Relations
 REL_TWEET 	= 't3_tweet_6'
-REL_HOME 	= 't4_home'
+#REL_HOME 	= 't4_home'
+#REL_HOME 	= 'hbk_home'
+REL_HOME 	= 'hbk_home2'
 REL_NHOOD 	= 't4_nhood'
 
 # Multi processing
