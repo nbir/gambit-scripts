@@ -42,10 +42,19 @@ def find_daily_disp():
 		WHERE ST_Within (geo, ST_UNION( \
 			ARRAY(SELECT pol FROM {rel_nhood} \
 					WHERE id in %s)))'.format(rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD)
+	SQL_ALT = 'SELECT user_id \
+		FROM {rel_home} \
+		WHERE ST_Within (geo, ST_ConvexHull( \
+			ST_Collect(ARRAY(SELECT pol FROM {rel_nhood} \
+					WHERE id in %s))))'.format(rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD)
 	
 	con = psycopg2.connect(my.DB_CONN_STRING)
 	cur = con.cursor()
-	cur.execute(SQL, (tuple(_load_nhoodIDs()), ))
+	try:
+		cur.execute(SQL, (tuple(_load_nhoodIDs()), ))
+	except:
+		print 'PostGIS function ST_Union failed! Using ST_ConvexHull instead.'
+		cur.execute(SQL_ALT, (tuple(_load_nhoodIDs()), ))
 	records = cur.fetchall()
 	con.close()
 	user_ids = [int(rec[0]) for rec in records]
@@ -150,18 +159,24 @@ def join_daily_disp():
 
 def plot_super_disp_plot():
 	'''Plot displacement from home for all users in region'''
-	SQL = 'SELECT user_id \
-		FROM {rel_home} \
-		WHERE ST_Within (geo, ST_UNION( \
-			ARRAY(SELECT pol FROM {rel_nhood} \
-				WHERE id in %s)))'.format(rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD)
+	if os.path.exists('data/' + my.DATA_FOLDER + 'user_list.json'):
+		with open('data/' + my.DATA_FOLDER + 'user_list.json', 'rb') as fpr:
+			user_ids = anyjson.loads(fpr.read())
+		user_ids = [int(user_id) for user_id in user_ids]
 
-	con = psycopg2.connect(my.DB_CONN_STRING)
-	cur = con.cursor()
-	cur.execute(SQL, (tuple(_load_nhoodIDs()), ))
-	records = cur.fetchall()
-	con.close()
-	user_ids = [int(rec[0]) for rec in records]
+	else:
+		SQL = 'SELECT user_id \
+			FROM {rel_home} \
+			WHERE ST_Within (geo, ST_UNION( \
+				ARRAY(SELECT pol FROM {rel_nhood} \
+					WHERE id in %s)))'.format(rel_home=my.REL_HOME, rel_nhood=my.REL_NHOOD)
+
+		con = psycopg2.connect(my.DB_CONN_STRING)
+		cur = con.cursor()
+		cur.execute(SQL, (tuple(_load_nhoodIDs()), ))
+		records = cur.fetchall()
+		con.close()
+		user_ids = [int(rec[0]) for rec in records]
 	print 'Read {0} user_ids'.format(len(user_ids))
 
 	# Plot super displacement plot
@@ -200,7 +215,8 @@ def plot_super_disp_plot():
 	# Displacement plot
 	fig = plt.figure(figsize=(5,5))
 	ax = fig.add_subplot(111)
-	plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+	#plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
+	plt.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
 	ax.set_autoscaley_on(False)
 	ax.set_ylim([-0.5,0.5])
 	ax.set_xlim([-0.5,0.5])
@@ -209,7 +225,7 @@ def plot_super_disp_plot():
 	ax.set_yticklabels([])
 	ax.set_xticklabels([])
 	ax.grid(True)
-	ax.plot(x, y, 'b,', alpha=0.75)
+	ax.plot(x, y, 'b,', alpha=0.95)
 	ax.plot([0], [0], 'r^')
 	ax.text(-0.45, -0.45, my.DATA_FOLDER.replace('/', '').upper(), fontsize=10)
 	

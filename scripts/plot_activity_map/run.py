@@ -20,4 +20,8 @@ if __name__ == '__main__':
 			print '\n*** Plot displacement for all users in region on map ***\n'
 			plot.plot_activity_on_map()
 
+		if 'la' in args.plot:
+			print '\n*** Plot map of LA ***\n'
+			plot.plot_la_map()
+
 

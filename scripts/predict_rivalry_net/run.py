@@ -23,9 +23,28 @@ if __name__ == '__main__':
 		if 'predict' in args.calc:
 			print '\n*** Predict rivalry network ***\n'
 			predict.predict_rivalry('activity/', 'activity_mat')
+			predict.predict_rivalry('activity/', 'activity_mat__dtf_norm')
+			predict.predict_rivalry('activity/', 'activity_mat__dist_norm')
+
+			predict.predict_rivalry('visits/', 'visit_mat')
+			predict.predict_rivalry('visits/', 'visit_mat__dtf_norm')
+			predict.predict_rivalry('visits/', 'visit_mat__dist_norm')
+
+			predict.predict_rivalry('visitors/', 'visitor_mat')
+
+		if 'plot-feat' in args.calc:
+			predict.plot_features('activity/', 'activity_mat')
 
 	if args.plot:
-		import src.predict_rivalry as plot
+		import src.plot as plot
 		if 'net' in args.plot:
 			print '\n*** Plot rivalry network ***\n'
 			plot.plot_rivalry('activity/', 'activity_mat')
+			plot.plot_rivalry('activity/', 'activity_mat__dtf_norm')
+			plot.plot_rivalry('activity/', 'activity_mat__dist_norm')
+
+			plot.plot_rivalry('visits/', 'visit_mat')
+			plot.plot_rivalry('visits/', 'visit_mat__dtf_norm')
+			plot.plot_rivalry('visits/', 'visit_mat__dist_norm')
+
+			plot.plot_rivalry('visitors/', 'visitor_mat')

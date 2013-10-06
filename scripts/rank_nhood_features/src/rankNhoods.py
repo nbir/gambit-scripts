@@ -32,31 +32,55 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 	hood_info = _load_hoodInfo()
 	visit_mat = _load_visitMat(folder, file_name)
 	visit_mat_frac = _calc_visitMatFrac(visit_mat)
+	inn = dict([(to_id, len([1 for from_id in hood_ids \
+					if from_id != to_id and visit_mat_frac[from_id][to_id] != 0])) \
+						for to_id in hood_ids])
+	outn = dict([(from_id, len([1 for to_id in hood_ids \
+					if to_id != from_id and visit_mat_frac[from_id][to_id] != 0])) \
+						for from_id in hood_ids])
+	inn = [i for i in inn if inn[i] > my.MIN_LINKS_FRAC*max(inn.values())]
+	outn = [i for i in outn if outn[i] > my.MIN_LINKS_FRAC*max(outn.values())]
+	print hood_ids
+	print inn
+	print outn
 
+	#for a in visit_mat_frac:
+	#	print a, len([1 for b in visit_mat_frac if visit_mat_frac[a][b] != 0 and visit_mat_frac[b][a] !=0])
+	
 	# Calculate each feature
 	OUTFLOW_INFLOW = dict([(h_id, _calc_inflowVsOutflow(h_id, visit_mat_frac)) for h_id in hood_ids])
 	IN_DENSITY = dict([(h_id, _calc_inDensity(h_id, visit_mat_frac)) for h_id in hood_ids])
 	OUT_DENSITY = dict([(h_id, _calc_outDensity(h_id, visit_mat_frac)) for h_id in hood_ids])
 	POPULARITY = dict([(h_id, _calc_Popularity(h_id, visit_mat_frac)) for h_id in hood_ids])
 	ENTROPY_OUT = dict([(h_id, _calc_EntropyOut(h_id, visit_mat_frac)) for h_id in hood_ids])
+	ENTROPY_OUT_BYN = dict([(h_id, _calc_EntropyOut_byN(h_id, visit_mat_frac)) for h_id in hood_ids])
 	ENTROPY_OUT_ALL = dict([(h_id, _calc_EntropyOutAll(h_id, visit_mat_frac)) for h_id in hood_ids])
 	ENTROPY_IN = dict([(h_id, _calc_EntropyIn(h_id, visit_mat_frac)) for h_id in hood_ids])
+	ENTROPY_IN_BYN = dict([(h_id, _calc_EntropyIn_byN(h_id, visit_mat_frac)) for h_id in hood_ids])
 	ENTROPY_IN_ALL = dict([(h_id, _calc_EntropyInAll(h_id, visit_mat_frac)) for h_id in hood_ids])
+	KL_DIVERGENCE = dict([(h_id, _calc_KLDivergence(h_id, visit_mat_frac)) for h_id in hood_ids])
 
+	ENTROPY_OUT = _trim_ids(ENTROPY_OUT, outn)
+	ENTROPY_IN = _trim_ids(ENTROPY_IN, inn)
+	
 	# Initialize features for plot
 	features = {'OUTFLOW_INFLOW' : OUTFLOW_INFLOW,
-	'IN_DENSITY' : IN_DENSITY,
-	'OUT_DENSITY' : OUT_DENSITY,
-	'POPULARITY' : POPULARITY,
-	'ENTROPY_OUT' : ENTROPY_OUT,
-	'ENTROPY_OUT_ALL' : ENTROPY_OUT_ALL,
-	'ENTROPY_IN' : ENTROPY_IN,
-	'ENTROPY_IN_ALL' : ENTROPY_IN_ALL}
+		'IN_DENSITY' : IN_DENSITY,
+		'OUT_DENSITY' : OUT_DENSITY,
+		'POPULARITY' : POPULARITY,
+		'ENTROPY_OUT' : ENTROPY_OUT,
+		'ENTROPY_OUT_(/N)' : ENTROPY_OUT_BYN,
+		'ENTROPY_OUT_ALL' : ENTROPY_OUT_ALL,
+		'ENTROPY_IN' : ENTROPY_IN,
+		'ENTROPY_IN_(/N)' : ENTROPY_IN_BYN,
+		'ENTROPY_IN_ALL' : ENTROPY_IN_ALL,
+		'KL_DIVERGENCE': KL_DIVERGENCE}
 
-	with open('data/' + my.DATA_FOLDER  + 'features_' + folder + '.pickle', 'wb') as fp1:
-		pickle.dump(features, fp1)
+	#with open('data/' + my.DATA_FOLDER  + 'features_' + folder + '.pickle', 'wb') as fp1:
+	#	pickle.dump(features, fp1)
 
-	feature_names = ['OUTFLOW_INFLOW', 'IN_DENSITY', 'OUT_DENSITY', 'POPULARITY', 'ENTROPY_OUT', 'ENTROPY_OUT_ALL', 'ENTROPY_IN', 'ENTROPY_IN_ALL']
+	#feature_names = ['OUTFLOW_INFLOW', 'IN_DENSITY', 'OUT_DENSITY', 'POPULARITY', 'ENTROPY_OUT', 'ENTROPY_OUT_ALL', 'ENTROPY_IN', 'ENTROPY_IN_ALL']
+	#feature_names = ['OUTFLOW_INFLOW', 'POPULARITY', 'ENTROPY_OUT', 'ENTROPY_OUT_(/N)', 'ENTROPY_IN', 'ENTROPY_IN_(/N)']
 	colors = ["#4DAF4A","#3B3B3B","#984EA3","#E41A1C","#A65628","#FA71AF","#FF7F00","#377EB8"]
 
 	# Plot all feature ranks
@@ -101,7 +125,7 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 	#print x_dist, y_dist
 
 	# Plot map: each feature
-	fig = plt.figure(figsize=(2 * 6, 4 * y_dist * 6/x_dist))
+	fig = plt.figure(figsize=(2 * 6, 3 * y_dist * 6/x_dist))
 	plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05)
 	count = 0
 	for name in feature_names:
@@ -111,7 +135,7 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 		heat = np.array([features[name][h_id] for h_id in pol_seq])
 
 		#fig = plt.figure(figsize=(6, y_dist * 6/x_dist))
-		ax = fig.add_subplot(4, 2, count, aspect='equal') 
+		ax = fig.add_subplot(3, 2, count, aspect='equal') 
 		#ax = fig.add_subplot(4, 2, count, aspect=y_dist/x_dist) 
 		coll = PolyCollection(pols, array=heat, cmap=mpl.cm.OrRd, edgecolors='k', alpha=0.75)
 		## mpl.cm.datad for list of colormaps
@@ -124,9 +148,56 @@ def calc_featAndPlot(folder='visits', file_name='visit_mat'):
 		ax.set_title(name)
 	
 	fig.suptitle('Neighborhood ranks: ' + folder.upper() + ' (' + my.DATA_FOLDER[:-1].upper() + ')', fontsize=18)
-	plt.savefig('data/' + my.DATA_FOLDER + folder + '/' + 'hood_rank_map__' + my.DATA_FOLDER[:-1] + '.png')
+	if not os.path.exists('data/' + my.DATA_FOLDER + 'nhood_rank/'):
+		os.makedirs('data/' + my.DATA_FOLDER + 'nhood_rank/')
+	plt.savefig('data/' + my.DATA_FOLDER + 'nhood_rank/' + file_name + '.png')
 
+	# Plot seperate plots WEST LA
+	'''feature_names = ['ENTROPY_OUT', 'ENTROPY_IN']
+	markers = {
+			2932: (-118.40034484863281, 33.95475186857191),
+			2815: (-118.4487533569336, 33.9778158396608),
+			2728: (-118.42403411865234, 33.989487811032085),
+			2813: (-118.40034484863281, 33.88922749934701),
+			2855: (-118.37081909179688, 33.86727982302171),
+			2870: (-118.48514556884766, 34.022217712919684),
+			2871: (-118.44806671142578, 34.036444170082454),
+			2814: (-118.43570709228516, 34.01055023831342),
+			2910: (-118.46351623535156, 33.994326938821324),
+			2846: (-118.41716766357422, 33.97923933661636),
+			2847: (-118.443603515625, 33.958738681008505),
+			2743: (-118.40412139892578, 33.91686783484126),
+			2727: (-118.3725357055664, 33.92228087152904),			
+			2772: (-118.39656829833984, 33.86585445407186)}
+	marker_seq = [2728,2871, 2814, 2910, 2727, 2932, 2815, 2813, 2855, 2870, 2846, 2847, 2743, 2772]
 
+	if not os.path.exists('data/' + my.DATA_FOLDER + 'nhood_rank/' + file_name + '/'):
+		os.makedirs('data/' + my.DATA_FOLDER + 'nhood_rank/' + file_name + '/')
+
+	for name in feature_names:
+		fig = plt.figure(figsize=(6, y_dist * 6/x_dist))
+		plt.subplots_adjust(left=0.01, right=0.99, top=0.99, bottom=0.01)
+		ax = fig.add_subplot(111, aspect='equal') 
+
+		heat = np.array([features[name][h_id] for h_id in pol_seq])
+		coll = PolyCollection(pols, array=heat, cmap=mpl.cm.OrRd, edgecolors='k', alpha=0.75)
+		ax.add_collection(coll)
+		ax.autoscale_view()
+		ax.get_xaxis().set_ticklabels([])
+		ax.get_yaxis().set_ticklabels([])
+		fig.colorbar(coll, ax=ax)
+
+		text = ''
+		count = 0
+		for h_id in marker_seq:
+			count += 1
+			x, y = markers[h_id]
+			ax.text(x, y, str(count), backgroundcolor='#dddddd', color='#000000', fontsize=15)
+			text += str(count) + ' : ' + hood_info[h_id]['name'] + '\n'
+		ax.text(0.02, 0.01, text, ha='left', va='bottom', transform=ax.transAxes, fontsize=15)
+
+		plt.savefig('data/' + my.DATA_FOLDER + 'nhood_rank/' + file_name + '/' + name + '.pdf')
+	'''
 #
 # LOAD functions
 #
@@ -141,16 +212,49 @@ _calc_visitMatFrac = lambda visit_mat: dict([(from_id, dict([(to_id, visit_mat[f
 #
 # CALC FEATURES
 #
-_calc_inflowVsOutflow = lambda h_id, visit_mat: sum([visit_mat[from_id][h_id] for from_id in visit_mat if from_id != h_id]) - \
-									sum([visit_mat[h_id][to_id] for to_id in visit_mat[h_id] if to_id != h_id])
+_calc_inflowVsOutflow = lambda h_id, mat: sum([mat[from_id][h_id] for from_id in mat if from_id != h_id]) - \
+									sum([mat[h_id][to_id] for to_id in mat[h_id] if to_id != h_id])
 					
-_calc_inDensity = lambda h_id, visit_mat: len([visit_mat[from_id][h_id] for from_id in visit_mat if from_id != h_id and visit_mat[from_id][h_id] != 0]) / float(len(visit_mat)) 
-_calc_outDensity = lambda h_id, visit_mat: len([visit_mat[h_id][to_id] for to_id in visit_mat[h_id] if to_id != h_id and visit_mat[h_id][to_id] != 0]) / float(len(visit_mat))
-_calc_Popularity = lambda h_id, visit_mat: len([visit_mat[from_id][h_id] for from_id in visit_mat if from_id != h_id and visit_mat[from_id][h_id] != 0]) + len([visit_mat[h_id][to_id] for to_id in visit_mat[h_id] if to_id != h_id and visit_mat[h_id][to_id] != 0])
-_calc_EntropyOut = lambda h_id, visit_mat: -1 * sum([visit_mat[h_id][to_id] * log(visit_mat[h_id][to_id]) for to_id in visit_mat[h_id] if to_id != h_id and visit_mat[h_id][to_id] != 0])
-_calc_EntropyOutAll = lambda h_id, visit_mat: -1 * sum([visit_mat[h_id][to_id] * log(visit_mat[h_id][to_id]) for to_id in visit_mat[h_id] if visit_mat[h_id][to_id] != 0])
-_calc_EntropyIn = lambda h_id, visit_mat: -1 * sum([visit_mat[from_id][h_id] * log(visit_mat[from_id][h_id]) for from_id in visit_mat if from_id != h_id and visit_mat[from_id][h_id] != 0])
-_calc_EntropyInAll = lambda h_id, visit_mat: -1 * sum([visit_mat[from_id][h_id] * log(visit_mat[from_id][h_id]) for from_id in visit_mat if visit_mat[from_id][h_id] != 0])
+_calc_inDensity = lambda h_id, mat: len([mat[from_id][h_id] for from_id in mat if from_id != h_id and mat[from_id][h_id] != 0]) / float(len(mat)) 
+_calc_outDensity = lambda h_id, mat: len([mat[h_id][to_id] for to_id in mat[h_id] if to_id != h_id and mat[h_id][to_id] != 0]) / float(len(mat))
+_calc_Popularity = lambda h_id, mat: len([mat[from_id][h_id] for from_id in mat if from_id != h_id and mat[from_id][h_id] != 0]) + len([mat[h_id][to_id] for to_id in mat[h_id] if to_id != h_id and mat[h_id][to_id] != 0])
+
+_calc_EntropyOut = lambda h_id, mat: -1 * sum([mat[h_id][to_id] * log(mat[h_id][to_id]) \
+											for to_id in mat[h_id] if to_id != h_id \
+											and mat[h_id][to_id] != 0])
+
+_calc_EntropyOut_byN = lambda h_id, mat: -1 * sum([mat[h_id][to_id] * log(mat[h_id][to_id]) \
+											for to_id in mat[h_id] if to_id != h_id \
+											and mat[h_id][to_id] != 0]) \
+											/ (1 + len([1 for to_id in mat[h_id] if to_id != h_id \
+											and mat[h_id][to_id] != 0 and mat[to_id][h_id] != 0]))
+
+_calc_EntropyOutAll = lambda h_id, mat: -1 * sum([mat[h_id][to_id] * log(mat[h_id][to_id]) for to_id in mat[h_id] if mat[h_id][to_id] != 0])
+
+_calc_EntropyIn = lambda h_id, mat: -1 * sum([mat[from_id][h_id] * log(mat[from_id][h_id]) \
+											for from_id in mat if from_id != h_id \
+											and mat[from_id][h_id] != 0])
+
+_calc_EntropyIn_byN = lambda h_id, mat: -1 * sum([mat[from_id][h_id] * log(mat[from_id][h_id]) \
+											for from_id in mat if from_id != h_id \
+											and mat[from_id][h_id] != 0]) \
+											/ (1 + len([1 for from_id in mat if from_id != h_id \
+											and mat[from_id][h_id] != 0 and mat[h_id][from_id] != 0]))
+
+_calc_EntropyInAll = lambda h_id, mat: -1 * sum([mat[from_id][h_id] * log(mat[from_id][h_id]) for from_id in mat if mat[from_id][h_id] != 0])
+
+#_calc_KLDivergence = lambda a, mat: sum([mat[a][b] * log(mat[a][b] / mat[b][a]) \
+_calc_KLDivergence = lambda a, mat: sum([mat[b][a] * log(mat[b][a] / mat[a][b]) \
+											for b in mat if a != b \
+											and mat[a][b] != 0 and mat[b][a] != 0])
 
 
 _conv_SplitLabels = lambda labels: [label.replace('-', ' ').replace(' ', '\n', 1) for label in labels]
+
+_minmax_norm = lambda vec: [(x-min(vec)) / (max(vec)-min(vec)) for x in vec]
+
+def _trim_ids(feat, ids):
+	for i in feat:
+		if i not in ids:
+			feat[i] = 0
+	return feat

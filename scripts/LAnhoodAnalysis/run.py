@@ -83,9 +83,15 @@ if __name__ == '__main__':
 		if 'region' in args.out:
 			print '\n*** Output: JSON of all homes and latlng in region ***\n'
 			out.out_homes_and_points_json()
+		if 'region-csv' in args.out:
+			print '\n*** Output: CSV files of all homes and latlng in region ***\n'
+			out.out_homes_and_points_csv()
 		if 'nhood-pts' in args.out:
 			print '\n*** Output: JSON of latlng by users of each nhood in region ***\n'
 			out.out_hoodwise_latlng_json()	
+
+		if 'test' in args.out:
+			out.test()
 
 	if args.test:
 		import src.test as test

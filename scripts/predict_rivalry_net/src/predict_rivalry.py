@@ -13,6 +13,7 @@ import anyjson
 import numpy as np
 import numpy as numpy
 import lib.geo as geo
+import matplotlib as mpl
 import lib.PiP_Edge as pip
 import matplotlib.pyplot as plt
 
@@ -20,14 +21,22 @@ from math import *
 from pylab import *
 from sklearn import svm
 from pprint import pprint
+from random import shuffle
+
+from sklearn import svm
+from sklearn import tree
 from sklearn import cluster
 from sklearn import naive_bayes
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors.nearest_centroid import NearestCentroid
+
 from sklearn import cross_validation
 from sklearn.decomposition import PCA
 from sklearn.neighbors import kneighbors_graph
 from sklearn.metrics import euclidean_distances
 from sklearn.preprocessing import StandardScaler
 from matplotlib.collections import PolyCollection
+from matplotlib.font_manager import FontProperties
 
 import settings as my
 sys.path.insert(0, os.path.abspath('..'))
@@ -43,6 +52,12 @@ def predict_rivalry(folder, file_name):
 	mat 	= _load_matrix(folder, file_name)
 	links 	= _trim_links(mat, ids, folder, file_name)
 	Xy 		= make_feature_mat(mat, links, folder, file_name)
+	path = 'data/' + my.DATA_FOLDER + 'dataset/' + folder
+	if not os.path.exists(path): os.makedirs(path)
+	with open(path + file_name + '.pickle', 'wb') as fp:
+		pickle.dump(Xy, fp)
+	with open(path + file_name + '.json', 'wb') as fp:
+		fp.write(anyjson.dumps(Xy))
 	#cluster_all(Xy)
 	y_pred  = classify_all(Xy, folder, file_name)
 	links_p = _make_predicted_links(links, y_pred, folder, file_name)
@@ -250,6 +265,62 @@ _out_entropy = lambda p, mat: -1 * sum([mat[p][to_id] * log(mat[p][to_id]) \
 
 
 #
+# PLOT FEATURES
+#
+def plot_features(folder, file_name):
+	''''''
+	path = 'data/' + my.DATA_FOLDER + 'dataset/' + folder
+	with open(path + file_name + '.pickle', 'rb') as fp:
+		Xy = pickle.load(fp)
+
+	X = Xy['X']
+	y = Xy['y']
+	M = len(X[0])
+	N = len(X)
+
+	path = 'data/' + my.DATA_FOLDER + 'features/' + folder + file_name + '/'
+	if not os.path.exists(path): os.makedirs(path)
+
+	for i in range(M):
+		f = []
+		for j in range(N): f.append(X[j][i])
+		f = _norm(f)
+		
+		r = []
+		nr = []
+		for k in range(N):
+			if y[k] == 0: nr.append(f[k])
+			else: r.append(f[k])
+		
+		feat_names = ['CENTROID_DIST', 'CLOSEST_DIST', 'MAX_TTY_SPAN', 'TTY_SPAN_DIFF', 'SPAN_SQ', 'TOTAL_ACTIVITY', 'AVG_ACTIVITY', 'IN_DENSITY_AplusB', 'IN_DENSITY_AminusB', 'OUT_DENSITY_AplusB', 'OUT_DENSITY_AminusB', 'IN_CROSS_ENTROPY', 'OUT_CROSS_ENTROPY']
+
+		num_bins = 10
+		fig = plt.figure(figsize=(10,4))
+		fig.set_tight_layout(True)
+		ax = fig.add_subplot(121)
+		ax.hist(nr, num_bins, facecolor='blue', alpha=0.5)
+		ax = fig.add_subplot(122)
+		ax.hist(r, num_bins, facecolor='red', alpha=0.5)
+		plt.savefig(path + 'hist_' + feat_names[i] + '.pdf')
+
+		fig = plt.figure(figsize=(4,4))
+		fig.set_tight_layout(True)
+		ax = fig.add_subplot(111)
+		ax.boxplot([nr, r], positions=[1,2], widths=0.5)
+		ax.set_title(feat_names[i].replace('_', ' ').replace('minus', '-').replace('plus', '+'))
+		plt.savefig(path + 'box_' + feat_names[i] + '.pdf')
+
+def _norm(x):
+	mx = float(max(x))
+	mn = float(min(x))
+	diff = mx - mn
+	if diff == 0:
+		return x
+	x_ = [(e-mn)/diff for e in x]
+	return x_
+
+
+#
 # CLUSTERING
 #
 def cluster_all(Xy):
@@ -346,7 +417,7 @@ def _dbscan(X):
 def classify_all(Xy, folder, file_name):
 	X = np.array(Xy['X'])
 	y = np.array(Xy['y'])
-	info = 'No. of links: '.rjust(25) + '{0}'.ljust(6).format(str(len(y)) + '    ') + '\n'
+	info = 'Links: '.rjust(25) + '{0}        '.format(str(len(y)) + '    ') + '\n'
 	'''
 	clf 	= naive_bayes.GaussianNB()
 	cv 		= cross_validation.LeaveOneOut(n=len(y))
@@ -359,6 +430,11 @@ def classify_all(Xy, folder, file_name):
 	for train, test in cv:
 		X_train, X_test, y_train, y_test = X[train], X[test], y[train], y[test]
 		clf 	= naive_bayes.GaussianNB()
+		#clf 	= svm.LinearSVC()
+		#clf = tree.DecisionTreeClassifier()
+		#clf = RandomForestClassifier(n_estimators=10)
+		#clf = NearestCentroid()
+
 		clf.fit(X_train, y_train)
 		pred 	= clf.predict(X_test)[0]
 		ind 	= test[0]
@@ -370,11 +446,16 @@ def classify_all(Xy, folder, file_name):
 	acc 	= true / float(len(y_pred))
 	acc_r 	= true_r / float(len([1 for i in range(len(y)) if y[i]==1]))
 	print true, acc, true_r, acc_r, miss
-	info += 'Leave-one-out Acc.: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc*100, 2)) + '%') + '\n'
-	info += 'Rebuilt rivalry net.: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc_r*100, 2)) + '%') + '\n'
-	info += 'Mis-predictions: '.rjust(25) + '{0}'.ljust(6).format(str(miss) + '     ') + '\n'
+	info += 'Network acc.: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc*100, 2)) + '%') + '\n'
+	info += 'Rivalry acc.: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc_r*100, 2)) + '%') + '\n'
+	#info += 'Mis-predictions: '.rjust(25) + '{0}'.ljust(6).format(str(miss) + '     ') + '\n'
 
 	clf = naive_bayes.GaussianNB()
+	#clf 	= svm.SVC()
+	#clf = tree.DecisionTreeClassifier()
+	#clf = RandomForestClassifier(n_estimators=10)
+	#clf = NearestCentroid()
+
 	clf.fit(X, y)
 	acc = clf.score(X, y)
 	print acc
@@ -383,125 +464,7 @@ def classify_all(Xy, folder, file_name):
 	with open('data/' + my.DATA_FOLDER  + 'predict_rivalry/' + folder + file_name + '/' + 'info.txt', 'wb') as fp1:
 		fp1.write(info)
 
+	print '----------'
 	return y_pred
 
-
-#
-# PLOT RIVALRY NET 
-#
-def _get_plot_lines(links, cmap=None):
-	lines = []
-	centers = _load_nhood_centers()
-	for link in links:
-		(a, b), [y, _] = link
-		vertices = np.array([centers[a], centers[b]])
-		lines.append([vertices, y])
-
-	return lines
-
-def plot_rivalry(folder, file_name):
-	with open('data/' + my.DATA_FOLDER  + 'predict_rivalry/' + folder + file_name + '/' + 'links.pickle', 'rb') as fp1:
-		links = pickle.load(fp1)
-	with open('data/' + my.DATA_FOLDER  + 'predict_rivalry/' + folder + file_name + '/' + 'predicted_links.pickle', 'rb') as fp1:
-		links_p = pickle.load(fp1)
-	with open('data/' + my.DATA_FOLDER  + 'predict_rivalry/' + folder + file_name + '/' + 'info.txt', 'rb') as fp1:
-		info = fp1.read()
-	centers = _load_nhood_centers()
-	names   = _load_nhood_names()
-
-	'''baseline = {}
-	for a, b, y in links:
-		y = input(names[a] + ' : ' + names[b] + ' = ')
-		baseline[(a, b)] = y
-	pprint(baseline)
-	return 0'''
-
-	actual    = [(np.array([centers[a], centers[b]]), y) for a, b, y in links]
-	baseline  = []
-	predicted = []
-	for i in range(len(links)):
-		a, b, y = links_p[i]
-		if y != links[i][2]:
-			y += 2
-		predicted.append((np.array([centers[a], centers[b]]), y))
-		y = my.BASELINE_PREDICTION[(a, b)] if (a, b) in my.BASELINE_PREDICTION else my.BASELINE_PREDICTION[(b, a)]
-		if y != links[i][2]:
-			y += 2
-		baseline.append((np.array([centers[a], centers[b]]), y))
-	y_ 		= [y for v,y in actual]
-	y_pred 	= [y for v,y in baseline]
-	true 	= len([1 for i in range(len(y_)) if y_[i]==y_pred[i]])
-	true_r 	= len([1 for i in range(len(y_)) if y_[i]==1 and y_[i]==y_pred[i]])
-	miss 	= len(y_) - true
-	acc 	= true / float(len(y_pred))
-	acc_r 	= true_r / float(len([1 for i in range(len(y_)) if y_[i]==1]))
-	base_info = 'No. of links: '.rjust(25) + '{0}'.ljust(6).format(str(len(y_)) + '    ') + '\n'
-	base_info += 'Accuracy: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc*100, 2)) + '%') + '\n'
-	base_info += 'Rebuilt rivalry net.: '.rjust(25) + '{0}'.ljust(6).format(str(round(acc_r*100, 2)) + '%') + '\n'
-	base_info += 'Mis-predictions: '.rjust(25) + '{0}'.ljust(6).format(str(miss) + '     ') + '\n'
-
-	pols = []
-	for pol in _load_nhood_polygons().values():
-		pol = [[ll[1], ll[0]] for ll in pol]
-		pols.append(pol)
-	lngs = [ll[0] for ll in pol for pol in pols]
-	lats = [ll[1] for ll in pol for pol in pols]
-	print max(lngs), min(lngs), max(lats), min(lats)
-	## MIGHT NEED TO SWAP x_dist and y_dist
-	y_dist = geo.distance(geo.xyz(max(lats), max(lngs)), geo.xyz(max(lats), min(lngs)))
-	x_dist = geo.distance(geo.xyz(max(lats), max(lngs)), geo.xyz(min(lats), max(lngs)))
-	print x_dist, y_dist
-
-	fig = plt.figure(figsize=(1.5* 3*4, 1.5* 6))
-	plt.subplots_adjust(left=0.02, right=0.98, top=0.99, bottom=0.0)
-
-	# Actual
-	ax = fig.add_subplot(1, 3, 1, aspect=1.2) 
-	coll = PolyCollection(pols, facecolor='#ffffff', edgecolors='#555555', alpha=0.75)
-	ax.add_collection(coll)
-	ax.autoscale_view()
-	ax.get_xaxis().set_ticklabels([])
-	ax.get_yaxis().set_ticklabels([])
-	ax.set_title('Actual')
-
-	for vertices, y in actual:
-		if y == 1:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.75, linewidth=4)
-		else:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.75, linewidth=1, linestyle=my.LINESTYLE[y])
-
-	# Baseline
-	ax = fig.add_subplot(1, 3, 2, aspect=1.2) 
-	coll = PolyCollection(pols, facecolor='#ffffff', edgecolors='#555555', alpha=0.75)
-	ax.add_collection(coll)
-	ax.autoscale_view()
-	ax.get_xaxis().set_ticklabels([])
-	ax.get_yaxis().set_ticklabels([])
-	ax.set_title('Baseline')
-	ax.text(0.95, 0.05, base_info, horizontalalignment='right', verticalalignment='bottom', transform = ax.transAxes, fontsize=12)
-
-	for vertices, y in baseline:
-		if y == 1:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.75, linewidth=4)
-		else:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.8, linewidth=2, linestyle=my.LINESTYLE[y])
-	
-	# Predicted
-	ax = fig.add_subplot(1, 3, 3, aspect=1.2) 
-	coll = PolyCollection(pols, facecolor='#ffffff', edgecolors='#555555', alpha=0.75)
-	ax.add_collection(coll)
-	ax.autoscale_view()
-	ax.get_xaxis().set_ticklabels([])
-	ax.get_yaxis().set_ticklabels([])
-	ax.set_title('Predicted')
-	ax.text(0.95, 0.05, info, horizontalalignment='right', verticalalignment='bottom', transform = ax.transAxes, fontsize=12)
-
-	for vertices, y in predicted:
-		if y == 1:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.75, linewidth=4)
-		else:
-			ax.plot(vertices[:,0], vertices[:,1], color=my.CMAP[y], alpha=0.8, linewidth=2, linestyle=my.LINESTYLE[y])
-	
-	#fig.suptitle('' + folder.upper() + ' (' + my.DATA_FOLDER[:-1].upper() + ')', fontsize=18)
-	plt.savefig('data/' + my.DATA_FOLDER  + 'predict_rivalry/' + folder + file_name + '/' + 'rivalry_net' + '.png')
 

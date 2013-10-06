@@ -145,7 +145,7 @@ def _plot_hist(x, nbins, range, file_name):
 	ax.set_title(title, fontsize=11)
 	if not os.path.exists('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/'):
 		os.makedirs('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/')
-	plt.savefig('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/' + file_name + '.png')
+	plt.savefig('data/' + my.DATA_FOLDER + 'displacement/' + 'disp_stat/' + file_name + '.pdf')
 	print 'Stored chart: %s' % file_name
 
 	return amp, index

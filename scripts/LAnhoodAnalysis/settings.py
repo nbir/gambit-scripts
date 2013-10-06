@@ -10,24 +10,25 @@
 # Folders
 #DATA_FOLDER = 'all-hoods/'
 #DATA_FOLDER = 'regions/'
-#DATA_FOLDER = 'hbk_old/'
-DATA_FOLDER = 'hbk_old2/'
-
 #DATA_FOLDER = 'hbk/'
+#DATA_FOLDER = 'hbk_old/'
+#DATA_FOLDER = 'hbk_old2/'
 #DATA_FOLDER = 'south-la/'
 #DATA_FOLDER = 'west-la/'
 #DATA_FOLDER = 'south-bay/'
-
 #DATA_FOLDER = 'pomona/'
 #DATA_FOLDER = 'bernardino/'
 #DATA_FOLDER = 'riverside/'
+#DATA_FOLDER = 'blood_crip/'
 
 # Relations
 REL_TWEET 	= 't3_tweet_6'
-#REL_HOME 	= 't4_home'
+#REL_TWEET 	= 't2_tweet'
+REL_HOME 	= 't4_home'
 #REL_HOME 	= 'hbk_home'
-REL_HOME 	= 'hbk_home2'
+#REL_HOME 	= 'hbk_home2'
 REL_NHOOD 	= 't4_nhood'
+#REL_NHOOD 	= 'nh_blood_crip'
 
 # Multi processing
 PROCESSES 	= 12
@@ -51,6 +52,18 @@ USER_IDS_FROM_DB = False if DATA_FOLDER == 'hbk/' else True
 
 # DB
 DB_CONN_STRING = "host='76.170.75.150' dbname='twitter' user='twitter' password='flat2#tw1tter'"
+#DB_CONN_STRING = "host='brain.isi.edu' dbname='twitter' user='twitter' password='flat2#tw1tter'"
 
 # Plot settings
 PLOT_LABEL_ABS = True
+MIN_DIR_DIST = 500
+
+COLORS = {'hbk': '#377EB8',
+		'hbk_old': '#377EB8',
+		'hbk_old2': '#377EB8',
+		'south-la' : '#FA71AF',
+		'west-la' : '#4DAF4A',
+		'south-bay' : '#A65628',
+		'pomona' : '#3B3B3B',
+		'bernardino' : '#984EA3',
+		'riverside' : '#FF7F00'}
