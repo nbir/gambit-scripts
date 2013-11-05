@@ -13,6 +13,7 @@ import anyjson
 import psycopg2
 import shapefile
 import matplotlib
+import jsbeautifier as jsb
 import matplotlib.pyplot as plt
 
 from pylab import *
@@ -31,121 +32,59 @@ sys.path.insert(0, os.path.abspath('..'))
 #
 # TWEET ACTIVITY ON MAP
 #
-def plot_on_map():
+def plot_grid():
 	'''Plot all geo-tagged tweets on map'''
-	if not os.path.exists('data/' + my.DATA_FOLDER + 'plots/'):
-		os.makedirs('data/' + my.DATA_FOLDER + 'plots/')
-	SQL = 'SELECT ST_X(geo), ST_Y(geo)\
-			FROM {rel_tweet} \
-			WHERE geo IS NOT NULL'.format(rel_tweet=my.REL_TWEET)
+	lat1, lng1, lat2, lng2 = my.BBOX
+	xticks = np.arange(lng1, lng2, my.LNG_DELTA).tolist()
+	xticks.append(lng2)
+	print xticks
+	yticks = np.arange(lat1, lat2 + my.LAT_DELTA, my.LAT_DELTA).tolist()
 
-	con = psycopg2.connect(my.DB_CONN_STRING)
-	cur = con.cursor()
-	cur.execute(SQL)
-	recs = cur.fetchall()
-	con.close()
-	lats = [rec[0] for rec in recs]
-	lons = [rec[1] for rec in recs]
-
-	# World
-	fig=plt.figure(figsize=(16,10))
-	m = Basemap(llcrnrlon=-180, llcrnrlat=-75, urcrnrlon=180, urcrnrlat=85,
-				projection='mill')
-	m.drawcoastlines(linewidth=0.25)
-	m.drawcountries(linewidth=0.1)
-	m.fillcontinents(color='#FF7F00', alpha=0.1)
-	x, y = m(lons,lats)
-	m.plot(x, y, '+', color='#377EB8', alpha=0.1)
-	plt.tight_layout()
-	plt.savefig('data/' + my.DATA_FOLDER + 'plots/' + 'all_geo_world' + '.png')
-
-
-	# USA
-	fig=plt.figure(figsize=(16,10))
-	m = Basemap(llcrnrlon=-130, llcrnrlat=15, urcrnrlon=-60, urcrnrlat=55,
-				projection='mill')
-	#m.shadedrelief()
-	m.drawcoastlines(linewidth=0.25)
-	m.drawcountries(linewidth=0.1)
-	m.drawstates(linewidth=0.1)
-	m.fillcontinents(color='#FF7F00', alpha=0.1)
-	x, y = m(lons,lats)
-	m.plot(x, y, '+', color='#377EB8', alpha=0.1)
-	plt.tight_layout()
-	plt.savefig('data/' + my.DATA_FOLDER + 'plots/' + 'all_geo_usa' + '.png')
-	
-
-	# New York
-	fig=plt.figure(figsize=(16,10))
+	fig=plt.figure(figsize=(18,13))
+	fig.set_tight_layout(True)
 	ax=fig.add_subplot(111)
-	m = Basemap(llcrnrlon=-74.65, llcrnrlat=40.25, 
-				urcrnrlon=-73.25, urcrnrlat=41.0,
+	m = Basemap(llcrnrlon=lng1, llcrnrlat=lat1, 
+				urcrnrlon=lng2, urcrnrlat=lat2,
 				projection='mill')
+	ax.set_xlim(lng1, lng2)
+	ax.set_ylim(lat1, lat2)
+	ax.set_xticks(xticks)
+	ax.set_yticks(yticks)
+	#ax.grid(ls='-')
+	ax.grid(ls='--', lw=1.25)
+	plt.setp(plt.xticks()[1], rotation=90)
 
-	r = shapefile.Reader('data/' + my.DATA_FOLDER + 'shp/' + 'USA_adm2')
-	shapes = r.shapes()
-	records = r.records()
-	for record, shape in zip(records,shapes):
-	    lons_,lats_ = zip(*shape.points)
-	    data = np.array(m(lons_, lats_)).T
-	 
-	    if len(shape.parts) == 1:
-	        segs = [data,]
-	    else:
-	        segs = []
-	        for i in range(1,len(shape.parts)):
-	            index = shape.parts[i-1]
-	            index2 = shape.parts[i]
-	            segs.append(data[index:index2])
-	        segs.append(data[index2:])
-	 
-	    lines = LineCollection(segs,antialiaseds=(1,))
-	    lines.set_facecolors((1, 0.5, 0, 0.1))
-	    lines.set_edgecolors('k')
-	    lines.set_linewidth(0.15)
-	    ax.add_collection(lines)
+	bg = matplotlib.image.imread('data/' + my.DATA_FOLDER + 'map.png')
+	ax.imshow(bg, aspect='auto', extent=(lng1, lng2, lat1, lat2), alpha=0.9)
 
-	x, y = m(lons,lats)
-	m.plot(x, y, '+', color='#377EB8', alpha=0.95)
-	plt.tight_layout()
-	plt.savefig('data/' + my.DATA_FOLDER + 'plots/' + 'all_geo_ny' + '.png')
+	plt.savefig('data/' + my.DATA_FOLDER + 'grid' + '.png')
 
+	yticks.reverse()
 
-	# Los Angeles
-	fig=plt.figure(figsize=(16,10))
-	ax=fig.add_subplot(111)
-	#-118.7267991797,33.6002128689,-117.3109129492,34.3385056333
-	m = Basemap(llcrnrlon=-118.75, llcrnrlat=33.6, 
-				urcrnrlon=-117.30, urcrnrlat=34.35,
-				projection='mill')
+	grid = {
+		'bbox' : my.BBOX,
+		'lat_delta' : my.LAT_DELTA,
+		'lng_delta' : my.LNG_DELTA,
+		'xticks' : [round(i, 3) for i in xticks],
+		'yticks' : [round(i, 3) for i in yticks],
+		'rows' : len(yticks) - 1,
+		'columns' : len(xticks) - 1,
+		'cells' : (len(yticks) - 1) * (len(xticks) - 1),
+		'grid' : {},
+		#'grid_lookup' : {}
+	}
 
-	r = shapefile.Reader('data/' + my.DATA_FOLDER + 'shp/' + 'USA_adm2')
-	shapes = r.shapes()
-	records = r.records()
-	for record, shape in zip(records,shapes):
-	    lons_,lats_ = zip(*shape.points)
-	    data = np.array(m(lons_, lats_)).T
-	 
-	    if len(shape.parts) == 1:
-	        segs = [data,]
-	    else:
-	        segs = []
-	        for i in range(1,len(shape.parts)):
-	            index = shape.parts[i-1]
-	            index2 = shape.parts[i]
-	            segs.append(data[index:index2])
-	        segs.append(data[index2:])
-	 
-	    lines = LineCollection(segs,antialiaseds=(1,))
-	    lines.set_facecolors((1, 0.5, 0, 0.1))
-	    lines.set_edgecolors('k')
-	    lines.set_linewidth(0.15)
-	    ax.add_collection(lines)
+	i = 0
+	for r in range(len(yticks) - 1):
+		#grid['grid_lookup'][round(yticks[r+1], 3)] = {}
+		for c in range(len(xticks) - 1):
+			grid['grid'][i] = (	round(yticks[r+1], 3), 
+								round(xticks[c], 3), 
+								round(yticks[r], 3), 
+								round(xticks[c+1], 3))
+			#grid['grid_lookup'][round(yticks[r+1], 3)][round(xticks[c], 3)] = i
+			i += 1	
 
-	x, y = m(lons,lats)
-	m.plot(x, y, '+', color='#377EB8', alpha=0.95)
-	plt.tight_layout()
-	plt.savefig('data/' + my.DATA_FOLDER + 'plots/' + 'all_geo_la' + '.png')
-
-
+	with open('data/' + my.DATA_FOLDER + 'grid.json', 'wb') as fp:
+		fp.write(jsb.beautify(anyjson.dumps(grid)))
 

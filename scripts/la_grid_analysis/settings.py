@@ -8,7 +8,11 @@
 #
 # Folders
 #
-DATA_FOLDER = 'lat.1_lng.1/'
+#DATA_FOLDER = 'lat.05_lng.05/'
+#DATA_FOLDER = 'lat.025_lng.025/'
+#DATA_FOLDER = 'lat.01_lng.01/'
+#DATA_FOLDER = 'spatial-norm/'
+DATA_FOLDER = 'deviation-norm/'
 
 
 ##################################################
@@ -28,10 +32,6 @@ TIMEZONE = 'America/Los_Angeles'
 TS_FORMAT = '%Y-%m-%d %H:%M:%S'
 TS_ISO_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
-#TS_START = '2013-06-27 12:00:00'
-TS_START = '2013-06-27 00:00:00'
-TS_WINDOW = 1 		# days
-
 
 PROCESSES = 12 		# threads
 
@@ -40,7 +40,21 @@ PROCESSES = 12 		# threads
 #
 # Bbox Settings
 #
-BBOX = [33.5, -118.7, 34.4, -117.2]
+BBOX = [33.500, -118.700, 34.400, -117.200]
 
-LAT_DELTA = 0.1
-LNG_DELTA = 0.1
+#LAT_DELTA = 0.05; LNG_DELTA = 0.05
+LAT_DELTA = 0.025; LNG_DELTA = 0.025
+#LAT_DELTA = 0.01; LNG_DELTA = 0.01
+
+
+##################################################
+#
+# Time Settings
+#
+DATE_FORMAT = '%Y-%m-%d'
+
+DATE_FROM = '2012-10-01'
+DATE_TO = '2013-10-06'
+
+MIN_TWEETS = 35000
+#MIN_TWEETS = 0

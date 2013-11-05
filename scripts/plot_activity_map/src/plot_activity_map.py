@@ -11,12 +11,11 @@ import csv
 import math
 import numpy
 import anyjson
-import psycopg2
 import matplotlib
 import matplotlib.pyplot as plt
 
 from pylab import *
-from PIL import Image
+#from PIL import Image
 from pprint import pprint
 from datetime import datetime
 from scipy.optimize import leastsq
@@ -206,11 +205,11 @@ def plot_la_map():
 	ax.get_frame().set_alpha(0)
 	background = matplotlib.image.imread('data/' + my.DATA_FOLDER + 'map.png')
 	ax.imshow(background, aspect='auto', extent=(-118.64, -117.09, 33.5, 34.29), alpha=0.95)
-	plt.savefig('data/' + my.DATA_FOLDER + 'map_la2' + '.pdf')
+	plt.savefig('data/' + my.DATA_FOLDER + 'map_la2' + '.png')
 
 	background = matplotlib.image.imread('data/' + my.DATA_FOLDER + 'map2.png')
 	ax.imshow(background, aspect='auto', extent=(-118.64, -117.09, 33.5, 34.29), alpha=0.15)
-	plt.savefig('data/' + my.DATA_FOLDER + 'map_la3' + '.pdf')
+	plt.savefig('data/' + my.DATA_FOLDER + 'map_la3' + '.png')
 
 
 
